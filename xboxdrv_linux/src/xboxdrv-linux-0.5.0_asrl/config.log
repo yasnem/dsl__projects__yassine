@@ -1,0 +1,115 @@
+file /home/sirius/banff/extras/src/xboxdrv_linux/src/xboxdrv-linux-0.5.0_asrl/SConstruct,line 28:
+	Configure(confdir = .sconf_temp)
+scons: Configure: Checking for C++ library X11... 
+scons: Configure: ".sconf_temp/conftest_0.cpp" is up to date.
+scons: Configure: The original builder output was:
+  |.sconf_temp/conftest_0.cpp <-
+  |  |
+  |  |
+  |  |#include "X11/Xlib.h"
+  |  |
+  |  |int
+  |  |main() {
+  |  |  
+  |  |return 0;
+  |  |}
+  |  |
+  |
+scons: Configure: ".sconf_temp/conftest_0.o" is up to date.
+scons: Configure: The original builder output was:
+  |g++ -o .sconf_temp/conftest_0.o -c -g -O2 -Wall -ansi -pedantic -DPACKAGE_VERSION='"0.5.0"' .sconf_temp/conftest_0.cpp
+  |
+scons: Configure: ".sconf_temp/conftest_0" is up to date.
+scons: Configure: The original builder output was:
+  |g++ -o .sconf_temp/conftest_0 .sconf_temp/conftest_0.o -lX11
+  |
+scons: Configure: (cached) yes
+
+scons: Configure: Checking for C++ library usb... 
+scons: Configure: ".sconf_temp/conftest_1.cpp" is up to date.
+scons: Configure: The original builder output was:
+  |.sconf_temp/conftest_1.cpp <-
+  |  |
+  |  |
+  |  |#include "usb.h"
+  |  |
+  |  |int
+  |  |main() {
+  |  |  
+  |  |return 0;
+  |  |}
+  |  |
+  |
+scons: Configure: ".sconf_temp/conftest_1.o" is up to date.
+scons: Configure: The original builder output was:
+  |g++ -o .sconf_temp/conftest_1.o -c -g -O2 -Wall -ansi -pedantic -DPACKAGE_VERSION='"0.5.0"' .sconf_temp/conftest_1.cpp
+  |
+scons: Configure: ".sconf_temp/conftest_1" is up to date.
+scons: Configure: The original builder output was:
+  |g++ -o .sconf_temp/conftest_1 .sconf_temp/conftest_1.o -lX11 -lusb
+  |
+scons: Configure: (cached) yes
+
+scons: Configure: Checking for C++ library boost_system... 
+.sconf_temp/conftest_2.cpp <-
+  |
+  |
+  |
+  |int
+  |main() {
+  |  
+  |return 0;
+  |}
+  |
+g++ -o .sconf_temp/conftest_2.o -c -g -O2 -Wall -ansi -pedantic -DPACKAGE_VERSION='"0.5.0"' .sconf_temp/conftest_2.cpp
+g++ -o .sconf_temp/conftest_2 .sconf_temp/conftest_2.o -lX11 -lusb -lboost_system
+scons: Configure: yes
+
+scons: Configure: Checking for C++ header file boost/thread/thread.hpp... 
+.sconf_temp/conftest_3.cpp <-
+  |
+  |#include "boost/thread/thread.hpp"
+  |
+  |
+g++ -o .sconf_temp/conftest_3.o -c -g -O2 -Wall -ansi -pedantic -DPACKAGE_VERSION='"0.5.0"' .sconf_temp/conftest_3.cpp
+scons: Configure: yes
+
+scons: Configure: Checking for C++ library boost_thread-mt... 
+scons: Configure: ".sconf_temp/conftest_4.cpp" is up to date.
+scons: Configure: The original builder output was:
+  |.sconf_temp/conftest_4.cpp <-
+  |  |
+  |  |
+  |  |
+  |  |int
+  |  |main() {
+  |  |  
+  |  |return 0;
+  |  |}
+  |  |
+  |
+scons: Configure: ".sconf_temp/conftest_4.o" is up to date.
+scons: Configure: The original builder output was:
+  |g++ -o .sconf_temp/conftest_4.o -c -g -O2 -Wall -ansi -pedantic -DPACKAGE_VERSION='"0.5.0"' .sconf_temp/conftest_4.cpp
+  |
+g++ -o .sconf_temp/conftest_4 .sconf_temp/conftest_4.o -lX11 -lusb -lboost_system -lboost_thread-mt
+/usr/bin/ld: cannot find -lboost_thread-mt
+collect2: error: ld returned 1 exit status
+scons: Configure: no
+
+scons: Configure: Checking for C++ library boost_thread... 
+.sconf_temp/conftest_5.cpp <-
+  |
+  |
+  |
+  |int
+  |main() {
+  |  
+  |return 0;
+  |}
+  |
+g++ -o .sconf_temp/conftest_5.o -c -g -O2 -Wall -ansi -pedantic -DPACKAGE_VERSION='"0.5.0"' .sconf_temp/conftest_5.cpp
+g++ -o .sconf_temp/conftest_5 .sconf_temp/conftest_5.o -lX11 -lusb -lboost_system -lboost_thread
+scons: Configure: yes
+
+

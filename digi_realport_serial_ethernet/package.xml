@@ -1,0 +1,18 @@
+<package>
+
+  <name>digi_realport_serial_ethernet</name>
+  <version>0.0.0</version>
+  <maintainer email="a@b.com">No one</maintainer>
+
+  <description>
+  A catkinized versoin of the Digi RealPort (DGRP) serial to ethernet driver.
+  </description>
+
+  <author>No one</author>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/digi_realport_serial_ethernet</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
+

@@ -1,0 +1,43 @@
+<package>
+  <!--REQUIRED HEADER-->
+  <name>asrl__robots__pioneer</name>
+  <version>1.0.0</version>
+  <maintainer email="maintainer@robotics.utias.utoronto.ca"></maintainer>
+  <description>
+
+     asrl_pioneer
+
+  </description>
+
+  <author>bs</author>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/asrl_pioneer</url>
+
+  <!--BUILD TOOL DEPENDENCIES-->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!--BUILD DEPENDENCIES-->
+  <build_depend>asrl__common__library</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>asrl__robots__vehicle</build_depend>
+  <build_depend>aria</build_depend>
+  <build_depend>digi_realport_serial_ethernet</build_depend>
+
+  <!--RUNTIME DEPENDENCIES-->
+  <run_depend>asrl__common__library</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>asrl__robots__vehicle</run_depend>
+  <run_depend>aria</run_depend>
+  <run_depend>digi_realport_serial_ethernet</run_depend>
+
+
+  <!--TEST DEPENDENCIES-->
+  <!-- test_depend>asrl__common__library</test_depend -->
+
+</package>
+
+

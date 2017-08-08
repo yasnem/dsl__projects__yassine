@@ -1,0 +1,23 @@
+<package>
+
+  <name>xboxdrv_linux</name>
+  <version>0.0.0</version>
+  <maintainer email="paul.furgale@robotics.utias.utoronto.ca"></maintainer>
+
+  <description>
+This package provides a convenient way to download and
+install the user-space XBOX 360 gamepad driver.
+  </description>
+
+  <author>Paul Furgale</author>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/xboxdrv_linux</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>boost</build_depend>
+  <build_depend>scons</build_depend>
+  <build_depend>libusb-dev</build_depend>
+
+</package>
+

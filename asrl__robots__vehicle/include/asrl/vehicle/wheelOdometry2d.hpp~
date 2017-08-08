@@ -1,0 +1,188 @@
+/**
+ * \file wheelOdometry2d.hpp
+ *
+ * \author Braden Stenning
+ *
+ *
+ *
+ *
+ *
+ */
+
+#ifndef ASRL_WHEEL_ODOMETRY_2D
+#define ASRL_WHEEL_ODOMETRY_2D
+
+// Used for absolute value
+#include <math.h>
+
+// ros cpp and exception
+#include <ros/ros.h>
+#include <ros/exception.h>
+
+// Definition of the standard ros messages and types that are used
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <nav_msgs/Odometry.h>
+#include <std_msgs/Int64.h>
+#include <tf/transform_datatypes.h>
+
+#include <asrl/rosutil/param.hpp>
+
+namespace asrl
+{
+  namespace vehicle
+  {
+    class WheelOdometry2d
+    {
+    public :
+      WheelOdometry2d(ros::NodeHandle nh, std::string vehicleBaseFrame, std::string vehicleOdomFrame, double odometryUpdateIntervalSeconds);
+
+      void setInitialTicks(long leftWheelTicks, long rightWheelTicks);
+      void fillOdometryMessage(nav_msgs::Odometry& odometryMessage, long leftWheelTicks, long rightWheelTicks);
+      void resetWheelOdometry(geometry_msgs::PoseWithCovariance& poseWithCovariance);
+
+    private :
+      long findElapsedTicks(long currentTickCount, long lastTickCount);
+      ros::NodeHandle nodeHandle_;
+
+      long maxTicks_;
+      long minTicks_;
+      double effectiveTrackWidthMeters_;
+      long leftWheelTicksPerMeter_;
+      long rightWheelTicksPerMeter_;
+
+      std::string vehicleBaseFrame_;
+      std::string vehicleOdomFrame_;
+      double odometryUpdateIntervalSeconds_;
+
+      /** \brief The transform broadcaster that sends the latest odometry transformation to the tf server */
+      //tf::TransformBroadcaster transformBroadcaster_;
+      //tf::TransformListener odometryListener_;
+
+      geometry_msgs::TransformStamped resetTransformMessage_;  /**< \brief The messages for tf broadcasts*/
+      tf::Transform currentOdometryTransform_;  /**< \brief The current odometry transform */
+
+      long lastTickCountLeftWheel_;
+      long lastTickCountRightWheel_;
+
+      long lowerQuarterTicks_;
+      long upperQuarterTicks_;
+      ros::Time lastUpdateTime_;
+    };
+
+
+    WheelOdometry2d::WheelOdometry2d(ros::NodeHandle nh, std::string vehicleBaseFrame, std::string vehicleOdomFrame, double odometryUpdateIntervalSeconds) :
+      nodeHandle_(nh),
+      vehicleBaseFrame_(vehicleBaseFrame),
+      vehicleOdomFrame_(vehicleOdomFrame),
+      odometryUpdateIntervalSeconds_(odometryUpdateIntervalSeconds)
+    {
+      // Check the parameter server for calibration parameters. Add the
+      // parameter to the parameter server if the parameter is not yet listed
+      // std_msgs::Int64 paramMaxTicks, paramMinTicks, paramLeftWheelTicksPerMeter, paramRightWheelTicksPerMeter;
+      // asrl::rosutil::param(nodeHandle_, std::string("base/odometry_parameters/max_ticks"), paramMaxTicks, (std_msgs::Int64)32768);
+      // asrl::rosutil::param(nodeHandle_, std::string("base/odometry_parameters/min_ticks"), paramMinTicks, (std_msgs::Int64)-32767);
+      // asrl::rosutil::param(nodeHandle_, std::string("base/odometry_parameters/left_wheel_ticks_per_meter"), paramLeftWheelTicksPerMeter, (std_msgs::Int64)165220);
+      // asrl::rosutil::param(nodeHandle_, std::string("base/odometry_parameters/right_wheel_ticks_per_meter"), paramRightWheelTicksPerMeter, (std_msgs::Int64)163700);
+      asrl::rosutil::param(nodeHandle_, std::string("base/odometry_parameters/effective_track_width_meters"), effectiveTrackWidthMeters_, 0.5);
+
+      maxTicks_ = (long)32768; //paramMaxTicks;
+      minTicks_ = (long)-32767; //paramMinTicks;
+      leftWheelTicksPerMeter_ = (long)165220; //paramLeftWheelTicksPerMeter;
+      rightWheelTicksPerMeter_ = (long)163700; //paramRightWheelTicksPerMeter;
+
+      lowerQuarterTicks_ = minTicks_ + (maxTicks_-minTicks_)/4;
+      upperQuarterTicks_ = maxTicks_ - (maxTicks_-minTicks_)/4;
+    }
+
+
+    void WheelOdometry2d::setInitialTicks(long leftWheelTicks, long rightWheelTicks)
+    {
+      lastUpdateTime_ = ros::Time::now();
+      lastTickCountLeftWheel_ = leftWheelTicks;
+      lastTickCountRightWheel_ = rightWheelTicks;
+
+      //geometry_msgs::TransformStamped odometryTransformMessage;
+      currentOdometryTransform_.setOrigin(tf::Vector3(0.0,0.0,0.0));
+      currentOdometryTransform_.setRotation(tf::Quaternion(0.0,0.0,0.0,1.0));
+
+      // Send the new transform
+      //transformBroadcaster_.sendTransform(odometryTransformMessage);
+      return;
+    }
+
+
+    long WheelOdometry2d::findElapsedTicks(long currentTickCount, long lastTickCount)
+    {
+      long elapsedTicks = currentTickCount - lastTickCount;
+
+      if (lastTickCount < lowerQuarterTicks_) {
+        if (currentTickCount > upperQuarterTicks_) {
+          elapsedTicks = (minTicks_ - lastTickCount) + (currentTickCount - maxTicks_) - 1;
+        }
+      } else if (lastTickCount > upperQuarterTicks_) {
+        if (currentTickCount < lowerQuarterTicks_) {
+          elapsedTicks = (maxTicks_ - lastTickCount) + (currentTickCount - minTicks_) + 1;
+        }
+      }
+
+      return elapsedTicks;
+    }
+
+
+    void WheelOdometry2d::fillOdometryMessage(nav_msgs::Odometry& odometryMessage, long leftWheelTicks, long rightWheelTicks)
+    {
+      ros::Time currentTime = ros::Time::now();
+      ros::Duration elapsedTime(currentTime - lastUpdateTime_);
+      lastUpdateTime_ = currentTime;
+
+      double distLeft = (double)findElapsedTicks(leftWheelTicks, lastTickCountLeftWheel_) / (double)leftWheelTicksPerMeter_;
+      double distRight = (double)findElapsedTicks(rightWheelTicks, lastTickCountRightWheel_) / (double)rightWheelTicksPerMeter_;
+      lastTickCountLeftWheel_ = leftWheelTicks;
+      lastTickCountRightWheel_ = rightWheelTicks;
+
+      double dist = 0.5 * (distLeft + distRight);
+      double theta = 0.9 * atan2( (distRight-distLeft), effectiveTrackWidthMeters_ );
+
+      //std::cout << "dist: " << dist << "  yaw: " << theta << "  deldist: " << (distRight-distLeft) << "   " << effectiveTrackWidthMeters_ << "\n";
+      tf::Transform deltaTrans(tf::createQuaternionFromYaw(theta),
+                               tf::Vector3(dist, 0.0, 0.0));
+
+      // Apply the odometry update
+      currentOdometryTransform_ *= deltaTrans;
+
+      // Fill in the odometry message
+      odometryMessage.header.stamp = currentTime;
+      odometryMessage.pose.pose.position.x = currentOdometryTransform_.getOrigin().x();
+      odometryMessage.pose.pose.position.y = currentOdometryTransform_.getOrigin().y();
+      odometryMessage.pose.pose.position.z = currentOdometryTransform_.getOrigin().z();
+      odometryMessage.pose.pose.orientation.x = currentOdometryTransform_.getRotation().x();
+      odometryMessage.pose.pose.orientation.y = currentOdometryTransform_.getRotation().y();
+      odometryMessage.pose.pose.orientation.z = currentOdometryTransform_.getRotation().z();
+      odometryMessage.pose.pose.orientation.w = currentOdometryTransform_.getRotation().w();
+
+      odometryMessage.twist.twist.linear.x = dist / elapsedTime.toSec();
+      odometryMessage.twist.twist.angular.z = theta / elapsedTime.toSec();
+
+      return;
+    }
+
+
+    void WheelOdometry2d::resetWheelOdometry(geometry_msgs::PoseWithCovariance& poseWithCovariance)
+    {
+      currentOdometryTransform_.setOrigin(tf::Vector3(poseWithCovariance.pose.position.x,
+                                                    poseWithCovariance.pose.position.y,
+                                                    poseWithCovariance.pose.position.z));
+      currentOdometryTransform_.setRotation(tf::Quaternion(poseWithCovariance.pose.orientation.x,
+                                                         poseWithCovariance.pose.orientation.y,
+                                                         poseWithCovariance.pose.orientation.z,
+                                                         poseWithCovariance.pose.orientation.w));
+
+      return;
+    }
+
+  }
+}
+
+#endif  // ASRL_WHEEL_ODOMETRY_2D

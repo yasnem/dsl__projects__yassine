@@ -1,0 +1,40 @@
+<package>
+
+  <name>asrl__common__library</name>
+  <version>1.0.0</version>
+  <description>
+     libasrl - common helper functionality for development within the University of Toronto Autonomous Space Robotics Lab (ASRL)
+  </description>
+  <maintainer email="ptf@robotics.utias.utoronto.ca">Paul Furgale</maintainer>
+  <license>BSD</license>
+
+  <author>Paul Furgale</author>
+  <url>http://ros.org/wiki</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>cmake_modules</build_depend>
+<!--   <build_depend>eigen</build_depend> -->
+  <!-- build_depend>numpy_eigen</build_depend -->
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <!-- build_depend>opencv2</build_depend -->
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>rqt_console</build_depend>
+
+  <!-- <run_depend>eigen</run_depend> -->
+  <!-- run_depend>numpy_eigen</run_depend -->
+  <run_depend>roscpp</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <!-- run_depend>opencv2</run_depend -->
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>rqt_console</run_depend>
+
+</package>
+
+

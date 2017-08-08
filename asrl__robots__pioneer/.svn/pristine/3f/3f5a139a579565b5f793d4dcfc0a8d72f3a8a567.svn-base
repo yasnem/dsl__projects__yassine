@@ -1,0 +1,125 @@
+<robot name="vehicle">
+
+  <!-- ======= Body ======= -->
+  <link name="vehicle_base_link" />
+  <link name="body_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0"/>
+      <geometry>
+        <box size=".56 .28 .29" />
+      </geometry>
+      <material name="red">
+	<color rgba="0.8 0.2 0.2 1.0"/>
+      </material>
+    </visual> 
+  </link>
+
+  <joint name="base_body" type="fixed">
+    <parent link="vehicle_base_link"/>
+    <child link="body_link"/>
+    <origin xyz="0.0 0.0 0.22" rpy="0.0 0.0 0.0" />
+    <axis xyz="1.0 0.0 0.0" />
+  </joint>
+
+  <!-- ======= Mast ======= -->
+  <link name="stereo_mast_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.03" length=".44" />
+      </geometry>
+      <material name="carbon">
+	<color rgba=".15 .15 .15 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="body_mast" type="fixed">
+    <parent link="body_link"/>
+    <child link="stereo_mast_link"/>
+    <origin xyz="0.13 0.0 0.34" rpy="0 0 0" />
+  </joint>
+
+  <!-- ======= Camera ======= -->
+  <link name="stereo_camera_link">
+    <visual>
+      <geometry>
+        <box size=".04 .28 .04" />
+      </geometry>
+      <material name="bumblebee yellow">
+	<color rgba=".85 .85 .15 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="mast_camera" type="fixed">
+    <parent link="stereo_mast_link"/>
+    <child link="stereo_camera_link"/>
+    <origin xyz="0.03 0.0 0.24" rpy="0 0.7 0" />
+  </joint>
+
+  <!-- ======= Wheels ======= -->
+  <link name="front_left_wheel_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.11" length=".06" />
+      </geometry>
+      <material name="gray">
+	<color rgba=".2 .2 .2 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="front_right_wheel_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.11" length=".06" />
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <link name="rear_left_wheel_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.11" length=".06" />
+      </geometry>
+      <material name="gray">
+	<color rgba=".2 .2 .2 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="rear_right_wheel_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.11" length=".06" />
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <joint name="body_front_left_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="front_left_wheel_link"/>
+    <origin xyz="0.15 0.2 -0.11" rpy="-1.57 0 0" />
+  </joint>
+
+  <joint name="body_front_right_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="front_right_wheel_link"/>
+    <origin xyz="0.15 -0.2 -0.11" rpy="1.57 0 0" />
+  </joint>
+
+  <joint name="body_rear_left_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="rear_left_wheel_link"/>
+    <origin xyz="-0.15 0.2 -0.11" rpy="-1.57 0 0" />
+  </joint>
+
+  <joint name="body_rear_right_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="rear_right_wheel_link"/>
+    <origin xyz="-0.15 -0.2 -0.11" rpy="1.57 0 0" />
+  </joint>
+
+</robot>

@@ -1,0 +1,113 @@
+cmake_minimum_required(VERSION 2.8)
+
+# Name the project
+project(asrl__common__library)
+
+# Catkin & ROS dependencies
+find_package(catkin REQUIRED
+  COMPONENTS roscpp sensor_msgs geometry_msgs tf std_msgs visualization_msgs rqt_console cmake_modules) #numpy_eigen 
+
+# System dependencies
+find_package(Boost REQUIRED
+  COMPONENTS python system filesystem serialization date_time)
+find_package(Eigen REQUIRED)
+find_package(OpenCV REQUIRED)
+
+# Includes
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${PYTHON_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
+  ${Eigen_INCLUDE_DIRS}
+)
+
+# Definitions
+add_definitions(${EIGEN_DEFINITIONS})
+
+## LIB ##
+
+# Catkinize the lib
+catkin_package(
+  INCLUDE_DIRS include
+  LIBRARIES ${PROJECT_NAME}_lib
+  CATKIN_DEPENDS roscpp sensor_msgs geometry_msgs tf std_msgs visualization_msgs rqt_console
+  DEPENDS Boost Eigen OpenCV
+)
+# Find lib source
+file(GLOB LIB_SRC
+  RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/math/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/math2/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/files/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/io/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/timing/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/rosutil/*.cpp"
+)
+# Add the lib
+add_library(${PROJECT_NAME}_lib
+  ${LIB_SRC}
+)
+# Link the lib
+target_link_libraries(${PROJECT_NAME}_lib ${Boost_LIBRARIES} ${OpenCV_LIBS} ${catkin_LIBRARIES})
+
+### PYTHON ##
+#
+## Catkinize the python
+#catkin_package(
+#  INCLUDE_DIRS include
+#  LIBRARIES ${PROJECT_NAME}_python
+#  CATKIN_DEPENDS roscpp sensor_msgs geometry_msgs tf std_msgs visualization_msgs rqt_console #numpy_eigen
+#  DEPENDS Boost Eigen OpenCV ${PROJECT_NAME}_lib
+#)
+## Find the python source
+#file(GLOB PYTHON_SRC
+#  RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+#  "${CMAKE_CURRENT_SOURCE_DIR}/src/python/*.cpp"
+#)
+## Add the python lib
+#FIND_PACKAGE(PythonLibs REQUIRED)
+#INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS)}
+#add_library(${PROJECT_NAME}_python
+#  ${PYTHON_SRC}
+#  )
+## Link the python lib
+#target_link_libraries(${PROJECT_NAME}_python
+#  ${PROJECT_NAME}_lib
+#  ${Boost_LIBRARIES}
+#  ${PYTHON_LIBRARY}
+#  )
+#
+
+
+
+### OLD CODE FOR REFERENCE ###
+### CLEAN UP AT SOME POINT ###
+
+## On OSX and Linux, the python library must end in the extension .so. Build this
+## filename here.
+#get_property(PYLIB_OUTPUT_FILE TARGET asrl_python PROPERTY LOCATION)
+#get_filename_component(PYLIB_OUTPUT_NAME ${PYLIB_OUTPUT_FILE} NAME_WE)
+#set(PYLIB_SO_NAME ${PYLIB_OUTPUT_NAME}.so)
+#
+#add_custom_command(TARGET asrl_python
+#    POST_BUILD
+#    COMMAND cp ${PYLIB_OUTPUT_FILE} python/${PYLIB_SO_NAME}
+#    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+#    COMMENT "Copying library files to python directory" )
+
+#catkin_add_gtest(test/libasrl_test_executable 
+#  test/three_point_methods.cpp
+#  test/test_main.cpp
+#  test/transformations.cpp
+#  test/EigenSerializationTests.cpp
+#  test/TransformationTests.cpp
+#  test/RosUtilTests.cpp
+#)
+
+## Link against the main project library if necessary
+#target_link_libraries(test/libasrl_test_executable asrl)
+#
+#target_link_libraries(libasrl_test_executable ${Boost_LIBRARIES})

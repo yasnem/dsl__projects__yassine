@@ -1,0 +1,2 @@
+%YAML:1.0
+CurvatureThresholds: [5.0, 12.0, 100.0]

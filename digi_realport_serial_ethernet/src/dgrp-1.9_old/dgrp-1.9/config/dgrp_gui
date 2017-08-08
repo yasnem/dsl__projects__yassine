@@ -1,0 +1,2493 @@
+#!/bin/sh
+# Run wish from the user's PATH \
+exec wish -f "$0" ${1+"$@"}
+
+#============================================================================== 
+#
+# FILE:  dgrp_msgs.tcl
+#
+# Define all text messages, labels, and constants in one place
+#
+#
+# 	dgrpVals = miscellaneous values
+# 	dgrpFVals = constants for file names and argument lists
+# 	dgrpMsg = text messages and labels
+#
+#============================================================================== 
+
+global dgrpVals
+global dgrpFVals
+global dgrpMsg
+global node
+global ports
+
+#-- dgrpVals -----------------------------------------------------------
+
+# set gui_debug to 0 or 1
+set dgrpVals(gui_debug)	0
+
+# We will use the master_node_list to have JUST those portservers
+# that are described in the /proc/dgrp/config and /etc/dgrp.backing.store
+# files.  This is to get around the problem with unsetting array elements
+# when the PortServer is deleted.
+# The master_node_list should be put in alphabetical order after every insert.
+set dgrpVals(master_node_list) { }
+set dgrpVals(current_node_id) ""
+set dgrpVals(node_arraynames) [list id ports ip status daemon major mode \
+	linkspeed index ipport owner group encrypt encrypt_ipport]
+set dgrpVals(port_arraynames) [list id tty_open_cnt pr_open_cnt \
+	tot_wait_cnt mstat iflag oflag cflag digiflags description status]
+set dgrpVals(refresh_update_delay) 2
+set dgrpVals(status_toplevel_dying) 0
+set dgrpVals(warned_about_closed) 0
+
+#-- dgrpFVals -----------------------------------------------------------
+
+set dgrpFVals(proc_config)	/proc/dgrp/config
+set dgrpFVals(proc_ports_dir)	/proc/dgrp/ports
+set dgrpFVals(proc_info)	/proc/dgrp/info
+
+set dgrpFVals(dgrp_store)	/etc/dgrp.backing.store
+set dgrpFVals(dgrp_root)	/usr/bin/dgrp/config
+set dgrpFVals(tmp_file)		/tmp/dgrp_gui.tmp
+set dgrpFVals(dgrp_cfg_node)	$dgrpFVals(dgrp_root)/dgrp_cfg_node 
+set dgrpFVals(dgrp_cfg_node_options) " -v -v"
+set dgrpFVals(logo)	[image create photo logo_icon \
+	-file $dgrpFVals(dgrp_root)/dgrp.gif ]
+
+# set dgrpFVals(tty_prefix) 	/dev/tty
+# set dgrpFVals(cu_prefix)	/dev/cu
+# set dgrpFVals(pr_prefix)	/dev/pr
+
+#-- node( ,default)------------------------------------------------------
+
+set node(id,default) 		{}
+set node(ports,default)		16
+set node(ip,default)		{}
+set node(status,default) 	{}
+set node(daemon,default) 	{}
+set node(major,default) 	{}
+set node(mode,default) 		0666
+set node(linkspeed,default) 	auto
+set node(index,default) 	-99
+set node(ipport,default) 	771
+set node(encrypt,default) 	never
+set node(encrypt_ipport,default)	1027
+set node(owner,default) 	0
+set node(group,default)		0
+
+#-- port( ,default)------------------------------------------------------
+	
+set port(type,default)		NA
+set port(id,default)		NA
+set port(tty_open_cnt,default)	NA
+set port(pr_open_cnt,default)	NA
+set port(tot_wait_cnt,default)	NA
+set port(mstat,default)		NA
+set port(iflag,default)		NA
+set port(oflag,default)		NA
+set port(cflag,default)		NA
+set port(bps,default)		NA
+set port(digiflags,default)	NA
+set port(description,default)	NA
+set port(status,default)	NA
+
+#-- dgrpMsg ------------------------------------------------------------
+
+# titles, strings
+
+# the gui version numbers are the version numbers of the package
+# it was distributed with
+set dgrpMsg(gui_ver)	 	"1.9"
+set dgrpMsg(gui_rev) 		"36"
+set dgrpMsg(gui_date)	 	"02/08/2016"
+
+set dgrpMsg(driver_ver)		""
+set dgrpMsg(driver_ver_err)	"(Could Not Determine Driver Module Version)"
+set dgrpMsg(driver_ver_ok)	"Loaded Driver Module Version: %1s"
+set dgrpMsg(driver_ver_dne)	"(No Driver Module Loaded)"
+
+set dgrpMsg(main_title) 	"Digi RealPort Manager"
+set dgrpMsg(main_toptext)	{Configured Devices on %1$s}
+set dgrpMsg(port_title)		"Digi RealPort Manager -- Ports"
+set dgrpMsg(port_toptext)	{Configured Ports on RealPort Device %1$s}
+set dgrpMsg(config_title) 	"Digi RealPort Device Settings"
+set dgrpMsg(config_toptext)	{Settings for RealPort Device %1$s}
+set dgrpMsg(linkspeed_title)	"Set Custom Link Speed"
+set dgrpMsg(logger_title)	"Digi RealPort Command Logger"
+set dgrpMsg(port_status_title)	"Port Status"
+set dgrpMsg(port_status_toptext) "Port Status"
+
+set dgrpMsg(ps_headings) \
+	"id  Ports Major      IP Address  Status            Link Speed       Encrypt"
+
+set dgrpMsg(port_headings) \
+	"Port   Status   Speed  Description"
+
+#============================================================================== 
+
+# labels 
+
+set dgrpMsg(id_label)		"RealPort ID:"
+set dgrpMsg(ip_label)		"IP Address or Name:"
+set dgrpMsg(ports_label)	"Number of Ports:"
+set dgrpMsg(speed_label)	"Link Speed:"
+set dgrpMsg(major_label)	"Major Number:"
+set dgrpMsg(ipport_label)	"IP Port:"
+set dgrpMsg(mode_label)		"Access Mode:"
+set dgrpMsg(owner_label)	"Owner:"
+set dgrpMsg(group_label)	"Group:"
+set dgrpMsg(encrypt_label)	"Encrypt Session:"
+set dgrpMsg(encrypt_ipport_label) "Encrypt IP Port:"
+
+set dgrpMsg(fast_rate_label)	"Fast Rate:"
+set dgrpMsg(fast_delay_label)	"Fast Delay:"
+set dgrpMsg(slow_rate_label)	"Slow Rate:"
+set dgrpMsg(slow_delay_label)	"Slow Delay:"
+set dgrpMsg(header_size_label)	"Header Size:"
+
+#============================================================================== 
+
+# menu options
+
+set dgrpMsg(config_mo)	"Configure / Initialize"
+set dgrpMsg(add_mo)	"Add New"
+set dgrpMsg(delete_mo)	"Delete / Uninitialize"
+set dgrpMsg(about_mo)	"About RealPort Manager"
+
+set dgrpMsg(tty_mo)	"Show tty's"
+set dgrpMsg(cu_mo)	"Show cu's"
+set dgrpMsg(pr_mo)	"Show pr's"
+
+set dgrpMsg(daemon_stat_mo)	"Check daemon status"
+set dgrpMsg(daemon_stop_mo)	"Stop Daemon"
+set dgrpMsg(daemon_start_mo)	"Start Daemon"
+set dgrpMsg(daemon_all_mo)	"View all running daemons"
+
+#============================================================================== 
+
+# file errors
+
+set dgrpMsg(file_dne_error) { 
+The file "%1$s" does not exist!
+} 
+
+set dgrpMsg(file_cannot_create_error) { 
+Error creating file "%1$s"
+}
+
+set dgrpMsg(file_cannot_open_error) { 
+Cannot open file file "%1$s"
+}
+
+set dgrpMsg(dir_dne_error) {The directory "%1$s" does not exist! \
+Please make sure that the
+RealPort package is installed on the system, and the path variables 
+declared in dgrp_gui are correct. 
+} 
+
+set dgrpMsg(cannot_cd_error) { 
+You do not have permission to cd to "%1$s"
+}
+
+set dgrpMsg(no_execute_perm_error) { 
+You do not have execute permission for the program "%1$s"
+}
+
+#============================================================================== 
+
+# error messages
+
+set dgrpMsg(no_ps_selected) {No selection has been made! \
+Please choose a unit from the list. }
+
+set dgrpMsg(no_port_selected) {No selection has been made! \
+Please choose a port from the list. }
+
+set dgrpMsg(linkspeed_over) {The value for "%1$s" is out of bounds. \
+Must be less than or equal to %2$s.  See Help -> Valid Ranges for details. }
+
+set dgrpMsg(linkspeed_under) {The value for "%1$s" is out of bounds.\
+Must be greater than or equal to %2$s.  See Help -> Valid Ranges for details. }
+
+set dgrpMsg(invalid_IP) {The IP address "%1$s" is not valid.}
+
+set dgrpMsg(invalid_id) {The RealPort id "%1$s" is not valid.}
+
+set dgrpMsg(id_in_use) {The RealPort id "%1$s" is in use already.}
+
+set dgrpMsg(invalid_nports) {The number of ports must be between 0 and 64.}
+
+set dgrpMsg(invalid_mode) {The file mode "%1$s" is not valid.  Expecting one to four octal digits (0-7).}
+
+set dgrpMsg(invalid_owner) {The owner id "%1$s" is not valid.  Expecting positive integer.}
+
+set dgrpMsg(invalid_group) {The group id "%1$s" is not valid.  Expecting positive integer.}
+
+#============================================================================== 
+
+set dgrpMsg(linkspeed_help_label)	"About Link Speed" 
+set dgrpMsg(linkspeed_help) {
+
+Link Speed
+
+This is an optional parameter useful on slow speed WAN links.\
+It is a formatted string containing  1  to  5 decimal numbers,\
+separated by commas or periods.  The numbers are:
+
+   (a) Maximum link speed in bits/second
+   (b) Highest delay for maximum speed in milliseconds
+   (c) Minimum link speed in bits/second
+   (d) Lowest delay for minimum speed in milliseconds
+   (e) Estimated packet header size
+
+This parameter allows  the  user  to  configure  a  balance\
+between  latency  (eg keystroke  delay)  and  throughput.\
+When the instantaneous delay between the UNIX system and the\
+RealPort client is below (b), the UNIX system transmits data at\
+up to  rate (a).  However when the delay exceeds (d), data is send\
+only at speed (c).  When the delay is between (b) and (d),  data\
+is  sent  at  a  proportional  value between (a) and (c).
+
+In  each  of  these  computations  we  assume a packet header size\
+of (e) for each packet sent across the link.  A value of 46 bytes\
+is  assumed  by  default;  this value  is  appropriate  for\
+Encapsulated Ethernet over Frame Relay.  A value of 8 should be\
+used for PPP links with Van Jacobsen header compression.
+
+Most WAN users need specify only parameter (a) and let parameters\
+(b) (c) (d)  (e) take default values.  For example most 56K Frame\
+Relay links with a combination of terminals and printers can use\
+a simple speed string of just 56000.  }
+
+#============================================================================== 
+
+set dgrpMsg(linkspeed_ranges_label)	"Valid Ranges"
+set dgrpMsg(linkspeed_ranges) {
+
+Link Speed Valid Ranges
+
+These are the valid ranges:
+
+FAST RATE:  greater than or equal to the maximum of 2400 bps and the\
+value specified by slow rate, and less than 10,000,000.
+
+SLOW RATE:  greater than or equal to 600 bps, and less than the\
+value specified by fast rate. (The fast rate value must be given.)
+
+	600 <= max(slow rate, 2400) <= fast rate < 10 000 000
+
+FAST DELAY: greater than or equal to 0 bps,  and less than the minimum\
+of 2400 bps and the value specified by slow delay.
+
+SLOW DELAY: greater than or equal to the fast delay,\
+and less than or equal to 10,000 bps. (The fast delay must be given.)
+
+	0 <= fast delay <= min(slow delay, 2400) <= 10 000
+
+HEADER SIZE:  greater than or equal to 2 bytes, and less than or equal\
+to 128 bytes.
+
+	2 <= header size <= 128
+
+}
+
+#============================================================================== 
+#1234567890123456789012345678901234567890123456789012345678901234567890123456789
+
+set dgrpMsg(about_info) {
+
+Digi RealPort Configuration Manager
+	Version: %1$s,  Date: %2$s
+
+Digi RealPort Driver
+	%3$s 
+
+This program allows you to easily install and configure new RealPort-enabled \
+products, or \
+update the configuration for those already installed. \
+For detailed help, consult the man page dgrp_gui(8). 
+
+COPYRIGHT INFORMATION
+
+Copyright 2000 Digi International (www.digi.com)
+
+This program is free software; you can redistribute it and/or modify it under \
+the terms of the GNU General Public License as published by the Free Software \
+Foundation; either version 2, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY \
+WARRANTY, EXPRESS OR IMPLIED; without even the implied warranty of MERCHANTABILITY \
+or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License \
+for more details. 
+
+You should have received a copy of the GNU General Public License along with \
+this program; if not, write to the Free Software Foundation, Inc., 675 Mass Ave, \
+Cambridge, MA 02139, USA. 
+
+AUTHORS
+	Ann-Marie Westgate
+	James Puzzo  <jamesp@digi.com>
+	Scott H Kilau <scottk at digi dot com>
+
+}
+
+#============================================================================== 
+
+set dgrpMsg(port_closed_info) {
+
+This port is currently closed and there no processes waiting to\
+open it.  The modem signals are stale and will therefore show all\
+zeros until an open is attempted.
+
+This message will not be shown again.
+}
+
+
+#================================================================================
+#
+# FILE:  dgrp_misc.tcl
+#
+# A collection of miscellaneous commands not directly related to PortServers.
+# This is a list of all the procedures in this file:
+#
+#  dbg_gui { text } 
+#  destroy_window { w } 
+#  info_dialog {text args} 
+#  error_dialog {text args} 
+#  warning_dialog {text default b0 b1} 
+#  dialog {w title text bitmap default args}
+#  Scroll_Set {scrollbar geoCmd offset size} 
+#  Scrolled_Listbox { f args } 
+#  Radio_Pulldown_Menu {f newvar args} 
+#
+#================================================================================
+
+#--------------------------------------------------------------------------------
+# 
+# dbg_gui
+#
+# Description:
+#
+#	if the value "gui_debug" is set, write to stdout
+
+proc dbg_gui { text } {
+	global dgrpVals
+
+	if $dgrpVals(gui_debug) { puts "dgrp_gui: $text" }
+
+}
+
+#--------------------------------------------------------------------------------
+# 
+# destroy_window
+#
+
+proc destroy_window { w } {
+
+	catch {grab release $w }
+	destroy $w
+}
+
+#--------------------------------------------------------------------------------
+
+proc info_dialog {text args} {
+
+	if { "$args" == "" } { 
+		dialog .dinfo {} "$text" info -1 OK
+	} else { 
+		dialog .dinfo {} [eval {format $text} $args] info -1 OK 
+	}
+	
+}
+
+proc error_dialog {text args} {
+
+	if { "$args" == "" } { 
+		dialog .dinfo {} "$text" info -1 OK
+	} else { 
+		dialog .dinfo {} [eval {format $text} $args] info -1 OK 
+	}
+}
+
+proc warning_dialog {text default b0 b1} {
+	dialog .dwarn {Warning} "Warning: $text" warning $default $b0 $b1
+}
+
+#--------------------------------------------------------------------------------
+# 
+# dialog
+# 
+# Description:
+#
+#	prepares a top level dialog box for warnings, errors and messages
+
+proc dialog {w title text bitmap default args} {
+	global button
+
+	# 1. Create the top-lovel window and divide it into top 
+	# and bottom parts.
+
+	toplevel $w -class Dialog
+	wm title $w $title
+	wm iconname $w Dialog
+	frame $w.top -relief raised -bd 1
+	pack $w.top -side top -fill both
+	frame $w.bot -relief raised -bd 1
+	pack $w.bot -side bottom -fill both
+
+	# 2. Fill the top part with the bitmap and message.
+
+	message $w.top.msg -text $text 
+	pack $w.top.msg -side right -expand 1 -fill both \
+		-padx 3m -pady 3m
+	if {$bitmap != ""} {
+		label $w.top.bitmap -bitmap $bitmap
+		pack $w.top.bitmap -side left -padx 3m -pady 3m
+	}
+	
+	# 3. Create a row of buttons at the bottom of the dialog.
+
+	set i 0
+	foreach but $args {
+		button $w.bot.button$i -text $but -command \
+			"set button $i"
+		if {$i == $default} {
+			frame $w.bot.default -relief sunken -bd 1
+			raise $w.bot.button$i
+			pack $w.bot.default -side left -expand 1\
+			    -padx 3m -pady 2m
+			pack $w.bot.button$i -in $w.bot.default \
+			    -side left -padx 2m -pady 2m \
+			    -ipadx 2m -ipady 1m	
+		} else {
+			pack $w.bot.button$i -side left -expand 1\
+			    -padx 3m -pady 3m -ipadx 2m -ipady 1m
+		}
+		incr i
+	}
+
+	# 4. Set up a binding for <Return>, if there's a default,
+	# set a grab, and claim the focus too.
+
+	if {$default >= 0} { 
+		bind $w <Return> "$w.bot.button$default flash; \
+			set button $default"
+	}
+	set oldFocus [focus]
+	dbg_gui "oldFocus is $oldFocus"
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+	focus $w
+
+	# 5. Wait for the user to respond, then restore the focus
+	# and return the index of the selected button.
+
+	tkwait variable button
+	destroy_window $w
+	focus $oldFocus
+	return $button
+}
+
+#--------------------------------------------------------------------------------
+#
+# Scroll_Set 
+#
+# Description:
+#
+# 	manages optional scrollbars.
+
+proc Scroll_Set {scrollbar geoCmd offset size} {
+	if {$offset != 0.0 || $size != 1.0} {
+		eval $geoCmd;	# Make sure it is visible
+		$scrollbar set $offset $size
+	} else {
+		set manager [lindex $geoCmd 0]
+		$manager forget $scrollbar;  # hide it
+	}
+}
+
+#--------------------------------------------------------------------------------
+#
+
+proc Scrolled_Listbox { f args } {
+	frame $f
+	listbox $f.list \
+		-xscrollcommand [list Scroll_Set $f.xscroll \
+			[list grid $f.xscroll -row 1 -column 0 -sticky we]] \
+		-yscrollcommand [list Scroll_Set $f.yscroll \
+			[list grid $f.yscroll -row 0 -column 1 -sticky ns]] \
+		-font {system 12}
+	eval {$f.list configure} $args
+	scrollbar $f.xscroll -orient horizontal \
+		-command [list $f.list xview]
+	scrollbar $f.yscroll -orient vertical \
+		-command [list $f.list yview]
+	grid $f.list $f.yscroll -sticky news
+	grid $f.xscroll -sticky news
+	grid rowconfigure $f 0 -weight 1
+	grid columnconfigure $f 0 -weight 1
+	return $f.list
+}
+
+#--------------------------------------------------------------------------------
+#
+
+proc Radio_Pulldown_Menu {f newvar args} {
+	
+	frame $f
+	menubutton $f.mbutton -textvariable $newvar -menu $f.mbutton.menu \
+		-relief raised 
+	menu $f.mbutton.menu
+	foreach item $args {
+		$f.mbutton.menu add radiobutton  -label $item -variable $newvar \
+			-value $item 
+	}
+	pack $f.mbutton -fill x
+	return $f
+
+}
+
+#================================================================================
+#
+# FILE:  dgrp_nodes.tcl
+#
+# This file contains all the code to create and update the window with
+# all the PortServer nodes displayed.  This is a list of all the procedures
+# contained in this file:
+#
+#  PS_Config_Window { f default args } 
+#  create_display_all_portservers_menubar { w } 
+#  create_display_all_portservers { w } 
+#  dismiss_display_all_portservers { w } 
+#  check_linkspeed { } 
+#  set_linkspeed { } 
+#  setup_ps_settings { ID } 
+#  is_integer { string } 
+#  isvalid_ps_ipaddress { IP } 
+#  isvalid_ps_id { ID } 
+#  isvalid_ps_nports { nports } 
+#  isvalid_ps_mode { mode } 
+#  setup_new_ps_settings { ID } 
+#  save_ps_settings { ID } 
+#  refresh_node_listbox { {old_selection 0} } 
+#  delete_node_listbox { } 
+#  fill_node_listbox { } 
+#  setup_node_arrays { } 
+#  delete_node_arrays { } 
+#  commit_portserver_config { ID } 
+#  config_portserver { } 
+#  add_portserver { } 
+#  remove_portserver { } 
+#  start_daemon { } 
+#  stop_daemon { } 
+#  check_daemon { } 
+#  show_device_nodes { prefix } 
+#
+#================================================================================
+
+#--------------------------------------------------------------------------------
+#
+# PS_Config_Window
+#
+# Description:
+#
+# 	this is the port server configuration window consisting of a 
+# 	listbox, title, bottom logo and buttons
+# 	the args field determines the button text
+#
+proc PS_Config_Window { f default args } {
+	global this_node 
+	global dgrpMsg
+
+	set text_fields {id ip ports major ipport mode owner group} 
+	
+	# Create the top frame
+	set w [toplevel $f]
+	wm title $w $dgrpMsg(config_title)
+
+	frame $w.top 
+	label $w.top.toptext -text [format $dgrpMsg(config_toptext) $this_node(id)]
+	pack $w.top.toptext -side left
+
+	# Create the middle frame
+	frame $w.mid 
+
+	# text entry fields
+	foreach field $text_fields {
+		entry $w.mid.e$field -textvariable this_node($field)\
+		   -relief sunken 
+	}
+	set linkspeed [Radio_Pulldown_Menu $w.mid.elinkspeed this_node(linkspeed) \
+		 auto 38400 57600 115200 ]
+
+	set encrypt [Radio_Pulldown_Menu $w.mid.eencrypt this_node(encrypt)  never always ]
+
+	# Add the text field for the encrypt ip port
+	entry $w.mid.eencrypt_ipport -textvariable this_node(encrypt_ipport)\
+	   -relief sunken 
+
+	# add the custom option
+	$linkspeed.mbutton.menu add separator
+	$linkspeed.mbutton.menu add checkbutton -label "Custom..." \
+	  -variable custom_linkspeed -command set_linkspeed 
+	
+	# labels
+	label $w.mid.lid 	-text $dgrpMsg(id_label) -anchor w
+	label $w.mid.lip	-text $dgrpMsg(ip_label) -anchor w
+	label $w.mid.lports 	-text $dgrpMsg(ports_label) -anchor w
+	label $w.mid.llinkspeed -text $dgrpMsg(speed_label) -anchor w
+	label $w.mid.lmajor 	-text $dgrpMsg(major_label) -anchor w
+	label $w.mid.lipport 	-text $dgrpMsg(ipport_label) -anchor w
+	label $w.mid.lmode 	-text $dgrpMsg(mode_label) -anchor w
+	label $w.mid.lowner 	-text $dgrpMsg(owner_label) -anchor w
+	label $w.mid.lgroup 	-text $dgrpMsg(group_label) -anchor w
+	label $w.mid.lencrypt 	-text $dgrpMsg(encrypt_label) -anchor w
+	label $w.mid.lencrypt_ipport 	-text $dgrpMsg(encrypt_ipport_label) -anchor w
+
+	foreach field $text_fields {
+		$w.mid.e$field 	delete 0 end
+		grid $w.mid.l$field $w.mid.e$field -sticky news
+	}
+
+	# Display the encrypt option.
+	grid $w.mid.lencrypt $w.mid.eencrypt -sticky news
+
+	# Now display the encrypt port number option.
+	$w.mid.eencrypt_ipport delete 0 end
+	grid $w.mid.lencrypt_ipport $w.mid.eencrypt_ipport -sticky news
+
+	grid $w.mid.llinkspeed $w.mid.elinkspeed -sticky news
+
+	# Create the bottom frame
+	frame $w.bottom -borderwidth 10
+
+	# Create the command buttons
+	set i 0
+	foreach but $args {
+		button $w.bottom.button$i -text $but -command \
+			"set button $i"
+		bind $w.bottom.button$i <Return> "set button $i"
+		if {$i == $default} {
+			frame $w.bottom.default -relief sunken -bd 1
+			raise $w.bottom.button $i
+			pack $w.bottom.default -side left -expand 1\
+			    -padx 3m -pady 2m
+			pack $w.bottom.button$i -in $w.bot.default \
+			    -side left -padx 2m -pady 2m \
+			    -ipadx 2m -ipady 1m	
+		} else {
+			pack $w.bottom.button$i -side left -expand 1\
+			    -padx 3m -pady 3m -ipadx 2m -ipady 1m
+		}
+		incr i
+	}
+
+	# Now pack it all in together
+	pack $w.top -side top -expand 1 -fill x
+	pack $w.mid 
+	pack $w.bottom -side bottom -fill x
+	return $w
+}
+
+#----------------------------------------------------------------------
+#
+proc create_display_all_portservers_menubar { w } {
+	global dgrpFVals 
+	global dgrpMsg
+
+	# Create the menu bar
+	menu $w.menubar
+	$w config -menu $w.menubar
+
+	# Create menu bar entries
+	foreach m {RealPort Daemon View} {
+		set $m [menu $w.menubar.m$m]
+		$w.menubar add cascade -label $m -menu $w.menubar.m$m
+	}
+
+	# 
+	# these are the pull down menu options for "RealPort"
+	#
+	$RealPort add command -label "Refresh List" \
+		-command { 
+			refresh_node_listbox
+		}
+	$RealPort add separator
+	$RealPort add command -label $dgrpMsg(config_mo) \
+		-command config_portserver
+	$RealPort add command -label $dgrpMsg(add_mo) \
+		-command add_portserver
+	$RealPort add command -label $dgrpMsg(delete_mo) \
+		-command remove_portserver
+	$RealPort add separator
+	$RealPort add command -label $dgrpMsg(about_mo) \
+		-command { get_driver_ver; \
+			info_dialog $dgrpMsg(about_info) $dgrpMsg(gui_ver) \
+				$dgrpMsg(gui_date) $dgrpMsg(driver_ver) }
+	$RealPort add separator
+	$RealPort add command -label "Quit" -command exit
+
+	# 
+	# these are the pull down menu options for "View"
+	#
+	$View add command -label Ports \
+		-command view_configured_ports
+	$View add separator
+	$View add command -label $dgrpMsg(tty_mo) -command { show_device_nodes tty }
+	$View add command -label $dgrpMsg(cu_mo) -command { show_device_nodes cu }
+
+	#
+	# these are all the command for the "Daemon"
+	#
+	$Daemon add command -label $dgrpMsg(daemon_stat_mo) -command check_daemon
+	$Daemon add command -label $dgrpMsg(daemon_stop_mo) -command stop_daemon
+	$Daemon add command -label $dgrpMsg(daemon_start_mo) -command start_daemon
+	$Daemon add separator
+	$Daemon add command -label $dgrpMsg(daemon_all_mo) \
+		-command {
+			set command "ps ax | grep drpd | grep -v grep"
+			Run $command
+		}
+
+	return $w.menubar
+}
+
+#----------------------------------------------------------------------
+# 
+proc create_display_all_portservers { w } {
+	global env
+	global ps_list
+	global node
+	global dgrpVals
+	global dgrpFVals
+	global dgrpMsg
+
+	toplevel $w
+	wm title $w $dgrpMsg(main_title)
+
+	#
+	# set the value of some initial variables
+	#
+
+	# custom_linkspeed is true until set otherwise in set_linkspeed
+	set custom_linkspeed 1  
+	set dgrpVals(dying) 0
+
+        # Bind the X-event "Destroy" to manage the dying flag as well
+        bind $w <Destroy> {
+                if {!$dgrpVals(dying)} {
+                        dismiss_display_all_portservers $w
+                        exit 0
+                }
+        }
+
+	# set up the top menu bar
+	create_display_all_portservers_menubar $w
+
+	# Create the top frame
+	frame $w.top 
+
+	if {[info exists env(HOSTNAME)]} {
+		set HOSTNAME $env(HOSTNAME)
+	} else {
+		set HOSTNAME "localhost"
+	}
+
+	label $w.top.toptext -text [format $dgrpMsg(main_toptext) $HOSTNAME] 
+	pack $w.top.toptext -side left
+
+	#
+        # Add the refresh button to update the display
+        #
+	button $w.top.bRefresh -text Refresh 
+        pack $w.top.bRefresh -padx 5 -pady 5 -side right
+
+	# Create the middle frame
+	frame $w.mid -borderwidth 10
+
+	# Create the node list box, read in the portserver settings,
+	# then add them all to the listbox
+	set ps_list [Scrolled_Listbox $w.mid.node_listbox -width 80 -height 10]
+	setup_node_arrays
+	fill_node_listbox
+
+	$ps_list selection clear 0 end
+	$ps_list selection set 0
+	$w.top.bRefresh configure -command refresh_node_listbox
+
+	# add the headings for the listbox
+	frame $w.mid.toptext
+	label $w.mid.toptext.headings -text $dgrpMsg(ps_headings) -font {system 12}
+	pack $w.mid.toptext.headings -side left
+	pack $w.mid.toptext $w.mid.node_listbox -side top -fill x  -expand true
+
+	# Create the bottom frame
+	frame $w.bottom -borderwidth 10 
+
+	label $w.bottom.ldigi_gif -image $dgrpFVals(logo)
+	button $w.bottom.bConfigure -text Configure -command config_portserver
+	button $w.bottom.bAdd -text Add -command add_portserver
+	button $w.bottom.bDelete -text Delete -command remove_portserver 
+	button $w.bottom.bQuit -text Quit -command exit
+
+	bind $w.bottom.bConfigure <Return> { config_portserver }
+	bind $w.bottom.bAdd	<Return> { add_portserver }
+	bind $w.bottom.bDelete	<Return> { remove_portserver }
+	bind $w.bottom.bQuit	<Return> exit
+
+
+	pack $w.bottom.ldigi_gif -side left
+	pack $w.bottom.bConfigure $w.bottom.bAdd \
+		 $w.bottom.bDelete $w.bottom.bQuit \
+		 -side left -padx 5 -expand 1
+	
+	# Now pack it all in together
+
+	pack $w.top -side top -expand 1 -fill x
+	pack $w.mid
+	pack $w.bottom -side bottom -expand 1 -fill x
+
+	# bind the default action on double clicking a line
+	bind $ps_list <Double-1> { config_portserver }
+	bind $ps_list <Return>	 { config_portserver }
+
+	dbg_gui "create_display_all_portservers: nboards = $dgrpVals(nboards)"
+
+	return $w
+
+}
+
+#----------------------------------------------------------------------
+proc dismiss_display_all_portservers { w } {
+	global dgrpVals
+
+	set dgrpVals(dying) 1
+	destroy_window $w
+}
+
+#----------------------------------------------------------------------
+#
+# check_linkspeed
+#
+# Description:
+# 
+# 	check to make sure that the linkspeed associalted with ID
+# 	is within the valid ranges.  The linkspeed is obtained from
+# 	this_node(linkspeed)
+
+# Returns:  the link speed string
+#
+# this is the valid ranges:
+#
+# 	      2400 <= fast_rate  < 10 000 000
+#    	         0 <= fast_delay < 2400
+#  	       600 <= slow_rate  <= fast_rate
+# 	fast_delay <= slow_delay <= 10 000
+# 	         2 <= header_size <= 128
+
+proc check_linkspeed { } {
+	global dgrpMsg
+	global this_node
+	global node
+
+	dbg_gui "check_linkspeed this_node(linkspeed):  $this_node(linkspeed)"
+
+	set line [split $this_node(linkspeed) ","]
+
+	set rates(fast_rate,given)	[lindex $line 0]
+	set rates(fast_rate,min)	2400
+	set rates(fast_rate,max)	10000000
+	set rates(fast_rate,name)	"fast rate"
+
+	set rates(fast_delay,given)	[lindex $line 1]
+	set rates(fast_delay,min)	0
+	set rates(fast_delay,max)	2400
+	set rates(fast_delay,name)	"fast delay"
+
+	set rates(slow_rate,given)	[lindex $line 2]
+	set rates(slow_rate,min)	600	
+	set rates(slow_rate,max)	$rates(fast_rate,given)
+	set rates(slow_rate,name)	"slow rate"
+
+	set rates(slow_delay,given)	[lindex $line 3]
+	set rates(slow_delay,min)	$rates(fast_delay,given)
+	set rates(slow_delay,max)	10000
+	set rates(slow_delay,name)	"slow delay"
+
+	set rates(header_size,given)	[lindex $line 4]
+	set rates(header_size,min)	2
+	set rates(header_size,max)	128
+	set rates(header_size,name)	"header size"
+	
+	set ret	 {}
+
+	if { [string compare $ret $node(linkspeed,default)] == 0 } {
+		return $ret
+	}
+
+	foreach rr {fast_rate fast_delay slow_rate slow_delay header_size} {
+		if { [string compare $rates($rr,given) ""] == 0 } break;
+		if { [expr $rates($rr,min) > $rates($rr,given)] } {
+	   	   error_dialog $dgrpMsg(linkspeed_under) $rates($rr,name) $rates($rr,min) 
+	   	   return -1
+		} elseif { [expr $rates($rr,given) > $rates($rr,max)] } {
+	   	   error_dialog $dgrpMsg(linkspeed_over) $rates($rr,name) $rates($rr,max) 
+	   	   return -1
+		} else { lappend ret $rates($rr,given) }
+	}
+
+	return [join $ret ,]
+}
+
+#----------------------------------------------------------------------
+#
+# set_linkspeed
+#
+# Description:
+#
+# 	Window to set the link speed for a specified node
+#
+proc set_linkspeed { } {
+	global dgrpMsg
+	global custom_linkspeed
+	global this_node
+
+	# 1. Create the top-lovel window and divide it into top 
+	# and bottom parts.
+
+	# Create the top frame
+	set w [toplevel .set_link]
+	wm title $w $dgrpMsg(linkspeed_title)
+	frame $w.top 
+	label $w.top.toptext -text "Link-Speed Settings for Device"
+	pack $w.top.toptext -side left
+	pack $w.top -side top -fill x
+
+	# add a menubar
+	menu $w.menubar
+	$w config -menu $w.menubar 
+       	set help [menu $w.menubar.mhelp]
+       	$w.menubar add cascade -label Help -menu $help
+	$help add command -label $dgrpMsg(linkspeed_help_label) \
+		-command { info_dialog $dgrpMsg(linkspeed_help) }
+	$help add command -label $dgrpMsg(linkspeed_ranges_label) \
+		-command { info_dialog $dgrpMsg(linkspeed_ranges) }
+
+	# 2. Fill the middle part with the 4 options
+	frame $w.mid 
+	foreach field {fast_rate fast_delay slow_rate slow_delay header_size} {
+		entry $w.mid.e$field -textvariable $field\
+		   -relief sunken 
+		$w.mid.e$field 	delete 0 end
+	}
+	label $w.mid.lfast_rate  -text $dgrpMsg(fast_rate_label)  -anchor w
+	label $w.mid.lfast_delay -text $dgrpMsg(fast_delay_label) -anchor w
+	label $w.mid.lslow_rate  -text $dgrpMsg(slow_rate_label)  -anchor w
+	label $w.mid.lslow_delay -text $dgrpMsg(slow_delay_label) -anchor w
+	label $w.mid.lheader_size -text $dgrpMsg(header_size_label) -anchor w
+	foreach field {fast_rate fast_delay slow_rate slow_delay header_size} {
+		grid $w.mid.l$field $w.mid.e$field -sticky news
+	}
+
+	set line [split $this_node(linkspeed) ","]
+	set i 0
+	foreach j {fast_rate fast_delay slow_rate slow_delay header_size} {
+		set line_item [lindex $line $i]
+		dbg_gui $line_item; 
+		if { $line_item != "{}" } { $w.mid.e$j insert 0 $line_item }
+		set i [expr $i + 1]
+	}
+
+	pack $w.mid
+
+	# 3. Create a row of buttons at the bottom 
+
+	frame $w.bottom 
+	pack $w.bottom -side bottom -fill both
+	foreach but {Commit Cancel} {
+		button $w.bottom.b$but -text $but 
+		pack $w.bottom.b$but -side left -expand 1\
+			    -padx 3m -pady 3m -ipadx 2m -ipady 1m
+	}
+	$w.bottom.bCommit configure -command {\
+		set custom_linkspeed 1
+		set this_node(linkspeed) \
+		   "$fast_rate,$fast_delay,$slow_rate,$slow_delay,$header_size"
+		set this_node(linkspeed) [check_linkspeed]
+		if { $this_node(linkspeed) != -1 } { destroy_window .set_link }
+		}
+	$w.bottom.bCancel configure -command "destroy_window .set_link"
+
+
+	# 4.  # set a grab, and claim the focus too.
+	set oldFocus [focus]
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+	focus $w.bottom.bCancel
+}
+
+
+#----------------------------------------------------------------------
+# 
+# setup_ps_settings
+#
+# Description:
+#
+# 	copy the node(field,) enties to this_node(field)
+#
+proc setup_ps_settings { ID } {
+	global dgrpVals
+	global node
+        global this_node
+
+	foreach name $dgrpVals(node_arraynames) {
+		set this_node($name) $node($name,$ID)
+	}
+
+}
+
+
+#----------------------------------------------------------------------
+#
+# is_integer
+#
+# Return:	0 if not an integer greater than 0
+#		1 if string is an integer greater than 0
+# 
+proc is_integer { string } {
+	set result ""
+	if { [scan $string %d result] != 0 } {
+		dbg_gui "Entering is_integer with `$string' and got `$result'"
+		if { [string compare $string $result] == 0 } {
+			# ok, we read in an integer
+			if { $result < 0 } { return 0 } else { return 1 }
+		}
+	} else {
+		return 0
+	}
+}
+
+#----------------------------------------------------------------------
+#
+# isvalid_ps_ipaddress 
+#
+# Description:
+#
+# 	if the name is one word beginning with [a-zA-Z], it is assumed valid
+# 	if the name begins with a number, it is split into
+# 	4 integers, n.n.n.n, each 0 =< n <= 255
+#
+proc isvalid_ps_ipaddress { IP } {
+	global dgrpMsg
+
+	# check that this is a valid IP or a name
+	set line $IP
+	dbg_gui "Entering isvalid_ps_ipaddress with `$IP'"
+
+	# 
+	# check to see if this is a named address
+	#
+	if { [string match {[a-zA-Z]*} $line] > 0 } {
+		# treat this as an IP name, check it is one word
+		scan $IP {%s} result
+		if { [string compare $result $IP] != 0 } {
+		  error_dialog $dgrpMsg(invalid_IP) $IP
+	 	  return 0 
+		}
+	} else {
+	#
+	# see if this is a valid IP address nnn.nnn.nnn.nnn
+	#
+		set line [split $line "."]
+		if { [ llength $line ] != 4 } {
+		  	error_dialog $dgrpMsg(invalid_IP) $IP
+	 		return 0 
+		} else {
+			foreach i $line {
+			   if { $i < 0 || $i >255 } { 
+		  		error_dialog $dgrpMsg(invalid_IP) $IP
+	 	  		return 0 
+	 		   }
+			}
+		}
+	}
+	return 1
+}
+
+#----------------------------------------------------------------------
+# 
+# isvalid_ps_id 
+#
+# Description:
+#
+# 	checks that the node id is not already in use, and is valid
+#
+proc isvalid_ps_id { ID } {
+	global dgrpVals
+	global dgrpMsg
+
+	dbg_gui "Entering isvalid_ps_id with `$ID'"
+	if { ![string match {[a-zA-Z0-9][a-zA-Z0-9]} $ID] &&
+	     ![string match {[a-zA-Z0-9]} $ID] } {
+		error_dialog $dgrpMsg(invalid_id) $ID 
+		return 0
+	}
+
+	# check that the id is not in use
+	foreach i $dgrpVals(master_node_list) {
+		if {[string compare $ID $i] == 0} {
+			error_dialog $dgrpMsg(id_in_use) $ID 
+			return 0
+		}
+	}
+	return 1
+}
+
+#----------------------------------------------------------------------
+# 
+# isvalid_ps_nports
+#
+# Description:
+#
+# 	check that the number of ports is valid
+#
+proc isvalid_ps_nports { nports } {
+	global dgrpMsg
+
+	dbg_gui "Entering isvalid_ps_nports with `$nports'"
+	# check that the number of ports is valid
+	if { $nports < 0 || $nports > 64 } { 
+		error_dialog $dgrpMsg(invalid_nports)
+		return 0
+	} else { 
+		return 1
+	}
+}
+	
+#----------------------------------------------------------------------
+# 
+# isvalid_ps_mode
+#
+# Description:
+#
+# 	check that the file mode is valid
+#
+proc isvalid_ps_mode { mode } {
+	global dgrpMsg
+
+	if { [string compare $mode default] == 0 } { return 1 }
+
+	set result "";  # just so we don't get an error 
+	scan $mode {%[0-7]} result
+	dbg_gui "Entering isvalid_ps_mode with `$mode'and got result `$result'"
+
+	if { ( [string compare $mode $result ] != 0 ) || \
+		 ($result > 7777) || ($result < 0) } {
+		error_dialog $dgrpMsg(invalid_mode) $mode
+		return 0
+	} else { 
+		return 1
+	}
+}
+#----------------------------------------------------------------------
+#
+# setup_new_ps_settings
+#
+# Description:
+#
+# 	Set some reasonable initial values for a new node
+# 
+proc setup_new_ps_settings { ID } {
+	global node
+	global dgrpVals
+	
+	dbg_gui "in proc setup_new_ps_settings id is $ID"
+
+	foreach name $dgrpVals(node_arraynames) {
+		set node($name,$ID) $node($name,default)
+	}
+}
+
+#----------------------------------------------------------------------
+#
+# save_ps_settings 
+#
+# Description:
+#
+# 	save the values from this_node(field) to node(field,ID)
+# 	for a specified node
+# 	Doesn't do any error checks
+# 
+proc save_ps_settings { ID } {
+	global node
+        global this_node
+	global dgrpVals
+	
+	dbg_gui "in proc save_ps_settings id is $ID"
+
+	foreach name $dgrpVals(node_arraynames) {
+		set node($name,$ID) $this_node($name)
+	}
+}
+
+#----------------------------------------------------------------------
+proc refresh_node_listbox { {old_selection -99} } {
+	global ps_list 
+
+	dbg_gui "Now in refresh_node_listbox"
+
+	# it is possible for old_selection to be -1
+	if { $old_selection < 0 } {
+		set old_selection [$ps_list curselection]
+	}
+
+	delete_node_arrays
+	delete_node_listbox
+	setup_node_arrays
+	fill_node_listbox
+
+	$ps_list selection clear 0 end
+	if { [string compare $old_selection ""] != 0 } {
+		$ps_list selection set $old_selection
+	}
+}
+
+#----------------------------------------------------------------------
+# 
+# delete_node_listbox
+#
+# Description:
+#
+# 	Delete the old listbox, and set all the indices to -1
+#
+proc delete_node_listbox { } {
+	global ps_list 
+	global node
+	global dgrpVals
+
+	dbg_gui "end is "
+	dbg_gui [$ps_list index end]
+
+	# delete the current listbox
+	$ps_list delete 0 end
+	foreach id $dgrpVals(master_node_list) { set node(index,$id) -1 }
+}
+
+#----------------------------------------------------------------------
+# 
+# fill_node_listbox
+#
+# Description:
+#
+# 	Fill the node listbox with the value in the node_field arrays
+# 	Set the node(index,) array to hold the listbox index for each id
+#
+proc fill_node_listbox { } {
+	global dgrpVals
+	global node
+	global ps_list
+
+	# insert all the nodes
+
+	set errorno 0
+
+	foreach id $dgrpVals(master_node_list) {
+
+		set node(index,$id) [$ps_list index end]
+
+		foreach name {id ports major ip status linkspeed encrypt} {
+			if { ![info exists node($name,$id)] } {
+			   dbg_gui "the value $name for $id does not exist"
+			   set $name "error" 
+			   set errorno 1
+			} else { 
+			   set $name $node($name,$id) 
+			   dbg_gui "set $name to $node($name,$id)"
+			}
+		}
+
+		$ps_list insert end [format "%2s    %2s   %3s  %15s  %6s  %20s        %6s" \
+			$id $ports $major $ip $status $linkspeed $encrypt]
+
+	}
+	set dgrpVals(nboards) [$ps_list index end] 
+}
+
+#----------------------------------------------------------------------
+#
+proc delete_node_arrays { } {
+	global node
+	global dgrpVals
+
+	dbg_gui "deleting all arrays"
+	foreach id $dgrpVals(master_node_list) {
+	   foreach name $dgrpVals(node_arraynames) {
+		if {[info exists node($name,$id)]} { unset node($name,$id) }
+	   }
+	}
+
+}
+
+#----------------------------------------------------------------------
+#
+proc setup_node_arrays { } {
+	global node
+	global dgrpVals
+	global dgrpFVals
+	global dgrpMsg
+
+	set dgrpVals(master_node_list) { }
+
+	#
+	# cat /proc/dgrp/config for settings
+	#
+	file delete -force $dgrpFVals(tmp_file)
+	if [file exists $dgrpFVals(proc_config)] {
+		set errorno [exec cat $dgrpFVals(proc_config) > $dgrpFVals(tmp_file)]
+		dbg_gui "setup_ps_settings: errorno is $errorno" 
+
+		if [catch {open $dgrpFVals(tmp_file) r} fp1] { 
+			puts $dgrpMsg(file_cannot_open_error) $dgrpFVals(tmp_file)
+			error_dialog "$fp1"; 
+			exit; 
+		}
+		while {[gets $fp1 line] >=0} {
+   		# process the config file line by line
+		# format is 
+		# id major status nports (status_index)
+		#                      vv these spaces are important!!
+		   if { [string match {  [a-zA-Z0-9]*} $line] != 0 } {
+   			scan $line "%s %d %s %d %s" f1 f2 f3 f4 f5
+			lappend dgrpVals(master_node_list) $f1
+   			set node(id,$f1) $f1
+   			set node(major,$f1) $f2
+   			set node(status,$f1) $f3
+   			set node(ports,$f1) $f4
+		   }
+		} 
+		close $fp1
+	}
+
+	#
+	# cat /proc/dgrp/config for settings
+	#
+	if [file exists $dgrpFVals(dgrp_store)] { 
+
+		if [catch {open $dgrpFVals(dgrp_store) r} fp1] { 
+			puts $dgrpMsg(file_cannot_open_error) $dgrpFVals(dgrp_store)
+			error_dialog "$fp1"; 
+			exit; 
+		}
+		while {[gets $fp1 line] >=0} {
+   		# process the store file line by line
+		# format is
+		# ID IP PortCount SpeedString IPPort Mode Owner Group Encrypt Encrypt_IPPort
+		dbg_gui "line: $line"
+		   if { [string match {[a-zA-Z0-9]*} $line] != 0 } {
+   			scan $line "%s %s %s %s %s %s %s %s %s %s" \
+			    	f1 f2 f3 f4 f5 f6 f7 f8 f9 f10
+			# these next 2 should ALREADY be set!
+			set node(id,$f1) $f1
+   			set node(ports,$f1) $f3 
+			# if there is a PS setup in /etc/dgrp.backing.store,
+			# that is not initialized, include it in the master list
+			dbg_gui "Searching for $f1 in $dgrpVals(master_node_list)"
+			if { [lsearch -exact $dgrpVals(master_node_list) $f1] == -1 } {
+				lappend dgrpVals(master_node_list) $f1
+				dbg_gui "Not found!  Appending..."
+			}
+			# these are new
+   			set node(ip,$f1) $f2
+			set node(linkspeed,$f1) $f4
+			set node(ipport,$f1) $f5
+			set node(mode,$f1) $f6
+			set node(owner,$f1) $f7
+			set node(group,$f1) $f8
+			set node(encrypt,$f1) $f9
+			set node(encrypt_ipport,$f1) $f10
+		   }	
+		# end while
+		}
+		close $fp1
+	}
+	
+	# ok, now make sure nothing goes unset!
+	foreach label $dgrpVals(node_arraynames) {
+		foreach id $dgrpVals(master_node_list) {
+   	   		if {![info exists node(${label},$id)]} {
+			   set node(${label},$id) $node(${label},default)
+			}
+   	  	} 
+	} 
+	set dgrpVals(master_node_list) [ lsort -dictionary $dgrpVals(master_node_list) ]
+	dbg_gui "master list: $dgrpVals(master_node_list)"
+	file delete -force $dgrpFVals(tmp_file)
+
+}
+
+#----------------------------------------------------------------------
+#
+# commit_portserver_config 
+#
+# Description:
+#
+# 	do the necessary error checking and run the 
+#	config command to make it happen
+#
+proc commit_portserver_config { ID } {
+	global dgrpFVals
+	global dgrpMsg
+	global node
+        global this_node
+
+	# setup the command line
+	set command "$dgrpFVals(dgrp_cfg_node) init "
+	dbg_gui "command in commit_portserver_config is $command"
+	set options $dgrpFVals(dgrp_cfg_node_options)
+
+	if { ! ( [isvalid_ps_ipaddress $this_node(ip)] \
+		&& [isvalid_ps_nports $this_node(ports)] \
+		&& [isvalid_ps_mode $this_node(mode)] ) } {
+	   return 1
+	}
+
+	if { ( [string compare $this_node(owner) default] != 0 ) \
+		&& !( [is_integer $this_node(owner)] ) } {
+	   error_dialog $dgrpMsg(invalid_owner) $this_node(owner)
+	   return 1
+	}
+
+	if { ( [string compare $this_node(group) default] != 0 ) \
+		&& !( [is_integer $this_node(group)] ) } {
+	   error_dialog $dgrpMsg(invalid_group) $this_node(group)
+	   return 1
+	}
+
+	if { ([string compare $this_node(ipport) default] != 0) } {
+		if { !([isvalid_ps_ipaddress $this_node(ip)] ) } {
+			return 1
+		}
+	}
+
+	if { ([string compare $this_node(encrypt_ipport) default] != 0) } {
+		if { !([isvalid_ps_ipaddress $this_node(ip)] ) } {
+			return 1
+		}
+	}
+
+	# check if the speed string has changed
+	if { [string compare $this_node(linkspeed) $node(linkspeed,$ID)] != 0 } {
+		append options " -s $this_node(linkspeed)"
+	}
+
+	# check if the portnumber string has changed
+	if { [string compare $this_node(ipport) $node(ipport,$ID)] != 0 } {
+		append options " -p $this_node(ipport)"
+	}
+	
+	# We always need to send in the encrypt option.
+	append options " -e $this_node(encrypt)"
+
+	# check if the encrypt ip port string has changed
+	if { [string compare $this_node(encrypt_ipport) $node(encrypt_ipport,$ID)] != 0 } {
+		append options " -q $this_node(encrypt_ipport)"
+	}
+
+	# check if the mode has changed
+	if { [string compare $this_node(mode) $node(mode,$ID)] != 0 } {
+		append options " -m $this_node(mode)"
+	}
+
+	# check if the owner has changed
+	if { [string compare $this_node(owner) $node(owner,$ID)] != 0 } {
+		append options " -o $this_node(owner)"
+	}
+
+	# check if the group has changed
+	if { [string compare $this_node(group) $node(group,$ID)] != 0 } {
+		append options " -g $this_node(group)"
+	}
+
+	save_ps_settings $this_node(id) 
+	append command $options
+	append command " $this_node(id) $this_node(ip) $this_node(ports)"
+	Run $command
+	return 0
+}
+
+#----------------------------------------------------------------------
+proc config_portserver { } {
+	global dgrpVals
+	global dgrpMsg
+	global node
+        global this_node
+	global ps_list
+
+	set linenumber [$ps_list curselection];
+	if { $linenumber == "" } { error_dialog $dgrpMsg(no_ps_selected); return }
+	set ID [lindex [$ps_list get $linenumber] 0 ]; 
+
+	# store the current vales for this port server
+	setup_ps_settings $ID
+	set w [PS_Config_Window .ps_config -1 Revert Commit Cancel]
+
+
+	foreach name {id ports ip major mode ipport owner group encrypt_ipport} {
+		$w.mid.e${name} insert 0 $node($name,$ID)
+	}
+
+	# set some fields to be read only
+	$w.mid.eid	config -state disabled -relief flat
+	$w.mid.emajor	config -state disabled -relief flat
+
+	# revert
+	$w.bottom.button0 configure -command " setup_ps_settings $ID; "
+	bind $w.bottom.button0 <Return> " setup_ps_settings $ID; "
+
+	# commit
+	$w.bottom.button1 configure -command { 
+		if { [commit_portserver_config $this_node(id)] == 0 } {
+			refresh_node_listbox
+			destroy_window .ps_config
+		}
+	}
+	bind $w.bottom.button1 <Return> {\
+		if { [commit_portserver_config $this_node(id)] == 0 } { 
+			refresh_node_listbox
+			destroy_window .ps_config }}
+
+	# cancel
+	$w.bottom.button2 configure -command { destroy_window .ps_config; 
+		refresh_node_listbox}
+	bind $w.bottom.button2 <Return> { destroy_window .ps_config;
+		refresh_node_listbox}
+
+	# grab the focus
+	set oldFocus [focus]
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+	focus $w.bottom.button2
+}
+
+#----------------------------------------------------------------------
+proc add_portserver { } {
+	global this_node
+	global node
+	global dgrpVals
+
+	foreach label $dgrpVals(node_arraynames) { 
+		set this_node($label) $node($label,default) 
+	}
+
+	set w [PS_Config_Window .ps_add -1 Commit Cancel]
+
+	# we don't use all the node_arraynames
+	foreach label {id ip ports major ipport mode owner group encrypt_ipport} { 
+		$w.mid.e${label} insert 0 $node($label,default)
+	}
+
+	$w.mid.emajor	config -state disabled -relief flat
+
+	# commit
+	$w.bottom.button0 configure -command { \
+		if { [isvalid_ps_id $this_node(id)] } {
+			setup_new_ps_settings $this_node(id)
+			if { [commit_portserver_config $this_node(id)] == 0 } {
+				destroy_window .ps_add
+			}
+		}
+	}
+	bind $w.bottom.button0 <Return> { if { [isvalid_ps_id $this_node(id)] } {
+			setup_new_ps_settings $this_node(id)
+			if { [commit_portserver_config $this_node(id)] == 0 } {
+				destroy_window .ps_add
+			}
+		}
+	}
+
+
+	# cancel
+	$w.bottom.button1 configure -command { destroy_window .ps_add}
+	bind $w.bottom.button1 <Return> { destroy_window .ps_add}
+
+	# grab the focus
+	set oldFocus [focus]
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+	focus $w.mid.eid
+}
+
+#----------------------------------------------------------------------
+#
+# remove_portserver { } {
+#
+# Description:
+#
+# 	calls dgrp config script to remove the selected portserver
+#
+proc remove_portserver { } {
+	global node
+        global this_node
+	global dgrpFVals
+	global dgrpMsg
+	global ps_list
+
+	set linenumber [$ps_list curselection];
+	if { $linenumber == "" } { error_dialog $dgrpMsg(no_ps_selected); return }
+	set ID [lindex [$ps_list get $linenumber] 0 ]; 
+
+	setup_ps_settings $ID
+	set w [PS_Config_Window .ps_remove -1 Remove Cancel]
+
+	# we don't use all the node_arraynames
+	foreach label {id ip ports major ipport mode owner group encrypt_ipport} { 
+		$w.mid.e${label} insert 0 $node($label,$ID)
+		$w.mid.e${label} config -state disabled -relief flat
+	}
+
+	$w.mid.eencrypt.mbutton	config -state disabled;
+	$w.mid.elinkspeed.mbutton	config -state disabled;
+
+	#
+	# button: remove
+	#
+	$w.bottom.button0 configure -command {
+		destroy_window .ps_remove; 
+		set command "$dgrpFVals(dgrp_cfg_node) -v -v "
+		append command "uninit $this_node(id) $this_node(ip) $this_node(ports)" 
+		Run $command 
+		refresh_node_listbox [expr [$ps_list curselection] - 1]
+	}
+	bind $w.bottom.button0 <Return> { destroy_window .ps_remove; 
+		set command "$dgrpFVals(dgrp_cfg_node) -v -v "
+		append command "uninit $this_node(id) $this_node(ip) $this_node(ports)" 
+		Run $command 
+		refresh_node_listbox [expr [$ps_list curselection] - 1]
+	}
+
+	#
+	# button: cancel
+	#
+	$w.bottom.button1 configure -command {destroy_window .ps_remove}
+	bind $w.bottom.button1 <Return> {destroy_window .ps_remove}
+
+	# grab the focus
+	set oldFocus [focus]
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+	focus $w.bottom.button1
+}
+
+
+#----------------------------------------------------------------------
+proc start_daemon { } {
+	global ps_list
+	global dgrpFVals
+	global dgrpMsg
+
+	set linenumber [$ps_list curselection];
+	if { $linenumber == "" } { error_dialog $dgrpMsg(no_ps_selected); return }
+	set ID [lindex [$ps_list get $linenumber] 0 ]; 
+	set IP [lindex [$ps_list get $linenumber] 3 ]; 
+
+	set command "$dgrpFVals(dgrp_cfg_node) $dgrpFVals(dgrp_cfg_node_options) start"
+	append command " $ID $IP"
+	Run $command
+	refresh_node_listbox
+}
+
+#----------------------------------------------------------------------
+proc stop_daemon { } {
+	global ps_list
+	global dgrpFVals
+	global dgrpMsg
+
+	set linenumber [$ps_list curselection];
+	if { $linenumber == "" } { error_dialog $dgrpMsg(no_ps_selected); return }
+	set ID [lindex [$ps_list get $linenumber] 0 ]
+
+	set command "$dgrpFVals(dgrp_cfg_node) $dgrpFVals(dgrp_cfg_node_options) stop"
+	append command " $ID "
+	Run $command
+	refresh_node_listbox
+}
+
+#----------------------------------------------------------------------
+proc check_daemon { } {
+	global ps_list
+	global dgrpMsg
+
+	set linenumber [$ps_list curselection];
+	if { $linenumber == "" } { error_dialog $dgrpMsg(no_ps_selected); return }
+	set ID [lindex [$ps_list get $linenumber] 0 ]
+
+	set command "ps ax | grep \"drpd $ID\" | grep -v grep"
+	Run $command
+}
+
+#----------------------------------------------------------------------
+proc show_device_nodes { prefix } {
+	global ps_list
+	global dgrpMsg
+
+	set linenumber [$ps_list curselection];
+	if { $linenumber == "" } { error_dialog $dgrpMsg(no_ps_selected); return }
+	set ID [lindex [$ps_list get $linenumber] 0 ]
+
+	set command "ls -l /dev | grep $prefix$ID.."
+	Run $command
+}
+
+#================================================================================
+#
+# FILE:  dgrp_ttys.tcl
+#
+# This file contains all the code to create and update the window with
+# all the ports for a single PS displayed.  This is a list of all the procedures
+# contained in this file:
+#
+#  create_status_toplevel { }
+#  dismiss_status_toplevel { w } 
+#  status_event_loop { w nn } 
+#  create_view_configured_ports_menubar { w } 
+#  refresh_port_listbox { }
+#  setup_port_arrays { id } 
+#  do_update { w nn } 		- update the modem status toplevel window
+#  delete_port_arrays { }	- deletes all the ports arrays
+#  delete_port_listbox { }	- delete the ports listbox
+#  fill_port_listbox { ID } 
+#  view_configured_ports { }
+#
+# These are all the global arrays for this file:
+# (for a port ttyIDnn, cuIDnn, or prIDnn, all arrays are indexed by nn)
+# global port_list	- a list of all ports associated with this node
+# global port(type,)	- tty | cu | pr
+# global port(id,)	- ID
+# global port(tty_open_cnt,) - number of tty and cu devices open
+# global port(pr_open_cnt,)  - number of printer ports open
+# global port(tot_wait_cnt,) - total number of process waiting on open
+# global port(mstat,)	- modem status flags
+# global port(iflag,) 	- the iflags given by the PS
+# global port(oflag,) 	- the oflags given by the PS
+# global port(cflag,) 	- the cflags given by the PS
+# global port(bps,) 	- the baud rate set on the PS
+# global port(digiflags,) - the Digi specific flags
+# global port(description,) - serial, modem, etc
+# global port(status,)	- open, closed
+#
+# These are some of the global variables:
+# dgrpVals(refresh_update_delay) 	- delay for the modem status window 
+# dgrpVals(status_toplevel_dying) 	- set to 1 if dying, so don't try to do updates
+# dgrpVals(current_node_id) 		- this is the PortServer id we are looking at
+#
+#================================================================================
+
+#--------------------------------------------------------------------------------
+#
+proc create_status_toplevel { } {
+	global dgrpVals
+	global dgrpMsg
+	global mflag
+	global plistbox
+
+	set portnumber [$plistbox curselection] 
+	if { $portnumber == "" } { error_dialog $dgrpMsg(no_port_selected); return }
+
+	set dgrpVals(status_toplevel_dying) 0
+	foreach index {DTR RTS CTS DSR DCD RI OPEN} { set mflag($index) 0 }
+
+	set w [toplevel .dgrp_status]
+	set oldFocus [focus]
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+
+	wm title $w $dgrpMsg(port_status_title)
+
+	# Bind the X-event "Destroy" to manage the status_toplevel_dying flag as well
+        bind $w <Destroy> {
+                if {!$dgrpVals(status_toplevel_dying)} {
+                        dismiss_status_toplevel .dgrp_status
+                }
+        }
+
+	#
+	# Create the top text
+	# 
+	frame $w.top
+	label $w.top.toptext -text $dgrpMsg(port_status_toptext)
+        button $w.top.bDismiss -text "Dismiss" \
+               -command { if {!$dgrpVals(status_toplevel_dying)} {
+				dismiss_status_toplevel .dgrp_status; \
+				refresh_port_listbox } }
+
+        bind $w.top.bDismiss <Return> { if {!$dgrpVals(status_toplevel_dying)} {
+				dismiss_status_toplevel .dgrp_status; \
+				refresh_port_listbox } }
+
+	pack $w.top.toptext -side left
+	pack $w.top.bDismiss -padx 5 -pady 5 -side left
+
+        #
+        # Create the radio buttons
+        #
+	frame $w.mid -borderwidth 5
+	set column 0
+	foreach modemsignal {DTR RTS CTS DSR DCD RI OPEN} { 
+		label $w.mid.l$modemsignal -text $modemsignal
+		checkbutton $w.mid.b$modemsignal -variable mflag($modemsignal)
+		grid $w.mid.l$modemsignal -row 0 -column $column -sticky ns
+		grid $w.mid.b$modemsignal -row 1 -column $column -sticky ns
+		incr column
+	}
+
+        #
+        # Create the bottom frame
+        #
+        frame $w.bottom
+
+	# 
+	# Add the delay scale
+	# 
+	dbg_gui "update_delay is ($dgrpVals(refresh_update_delay))"
+	scale $w.bottom.scale -from 0 -to 10 -length 200 -variable dgrpVals(refresh_update_delay) \
+		-orient horizontal -label "Update Delay in Seconds" \
+		-tickinterval 2 -showvalue true
+	pack $w.bottom.scale
+
+	pack $w.top -side top -expand 1 -fill x
+	pack $w.mid -fill x -pady 2m
+        pack $w.bottom -side bottom -fill x
+
+	# start with focus on the dismiss button
+	focus $w.top.bDismiss
+
+        # !!!
+        #     Enter the Main Event Loop
+        # !!!
+
+        status_event_loop $w $portnumber
+
+}
+
+#----------------------------------------------------------------------
+#
+proc dismiss_status_toplevel { w } {
+        global dgrpVals
+
+        set dgrpVals(status_toplevel_dying) 1
+	destroy_window $w
+}
+
+
+#----------------------------------------------------------------------
+#
+proc status_event_loop { w nn } {
+	global dgrpVals
+
+	set timer1 0
+	while {1} {
+		if { [expr $timer1 < 1 ] } {
+			set timer1 [ clock seconds ]
+		}
+		update
+		set timer2 [ clock seconds ]
+		if { [expr ($timer2 - $timer1) >= $dgrpVals(refresh_update_delay) ]
+			&& !$dgrpVals(status_toplevel_dying) } {
+			do_update $w $nn
+			set timer1 0
+		}
+	}
+}
+
+#----------------------------------------------------------------------
+#
+proc do_update { w nn } {
+        global port
+	global mflag
+	global dgrpVals
+	global dgrpMsg
+	
+	# read in the most current settings
+	delete_port_arrays
+        setup_port_arrays $dgrpVals(current_node_id)
+
+	set DM_FLAGS $port(mstat,$nn)
+	set mflag(DTR) [expr $DM_FLAGS & 0x01]
+	set mflag(RTS) [expr ($DM_FLAGS & 0x02)?1:0]
+	set mflag(CTS) [expr ($DM_FLAGS & 0x10)?1:0]
+	set mflag(DSR) [expr ($DM_FLAGS & 0x20)?1:0]
+	set mflag(RI)  [expr ($DM_FLAGS & 0x40)?1:0]
+	set mflag(DCD) [expr ($DM_FLAGS & 0x80)?1:0]
+
+	# If the port is closed, then the status
+	# does not make sense, so we want to 
+	# give a warning, BUT we only want to
+	# give it once, and we do want to 
+	# continue checking for fresh stats...
+
+	set mflag(OPEN) [expr ( $port(tot_wait_cnt,$nn) + $port(tty_open_cnt,$nn))] 
+	set totcnt [expr ( $mflag(OPEN) + $port(pr_open_cnt,$nn) ) ]
+	if { $mflag(OPEN) > 0 } { set mflag(OPEN) 1 }
+	if { $totcnt == 0  && $dgrpVals(warned_about_closed) == 0 } {
+		info_dialog $dgrpMsg(port_closed_info)
+		incr dgrpVals(warned_about_closed)
+	} 
+
+}
+
+#----------------------------------------------------------------------
+#
+proc create_view_configured_ports_menubar { w } {
+	global dgrpVals
+
+	# Create the menu bar
+        menu $w.menubar
+        $w config -menu $w.menubar
+
+        foreach m {Ports} {
+                set $m [menu $w.menubar.m$m]
+                $w.menubar add cascade -label $m -menu $w.menubar.m$m
+        }
+
+      	$Ports add command -label "Refresh List" \
+                -command refresh_port_listbox
+    	$Ports add separator
+	$Ports add command -label "Modem Status" -command create_status_toplevel 
+}
+
+#----------------------------------------------------------------------
+# refresh_port_listbox
+# 
+proc refresh_port_listbox { } {
+        global plistbox 
+        global dgrpVals
+	
+        dbg_gui "Now in refresh_port_listbox"
+	set old_selection [$plistbox curselection]
+
+        delete_port_arrays 
+        delete_port_listbox
+        setup_port_arrays $dgrpVals(current_node_id)
+        fill_port_listbox $dgrpVals(current_node_id)
+
+        $plistbox selection clear 0 end
+        if { [string compare $old_selection ""] != 0 } {
+                $plistbox selection set $old_selection
+        } 
+}
+
+#----------------------------------------------------------------------
+#
+# go grab all the port settings 
+#
+
+proc delete_port_arrays { } {
+        global 	port_list 
+        global 	port
+	global  dgrpVals
+
+        dbg_gui "deleting all port arrays"
+
+	if { [llength port_list] == 0 } { return; }
+
+        foreach num $port_list {
+	   foreach name $dgrpVals(port_arraynames) {	
+                if {[info exists port($name,$num)]} {
+					unset port($name,$num)
+				}
+	   }
+        }
+
+	set port_list {} 
+
+}
+
+#----------------------------------------------------------------------
+#
+# go grab all the port settings 
+#
+
+proc setup_port_arrays {id} {
+        global 	port_list 
+        global 	port
+        global dgrpFVals
+        global dgrpMsg
+	global node
+
+        #
+        # cat /proc/dgrp/ports/<$id> for settings
+        #
+	set filename "$dgrpFVals(proc_ports_dir)/${id}"
+        dbg_gui "setup_port_arrays: filename is $filename" 
+        dbg_gui "setup_port_arrays: TMP_FILE is  $dgrpFVals(tmp_file)" 
+
+	file delete -force $dgrpFVals(tmp_file)
+
+	set port_list {}
+
+	# the following relies on the fact that we count from 0
+	set max_ports [expr $node(ports,$id) - 1]
+
+        if [file exists $filename] {
+                set errorno [exec cat $filename > $dgrpFVals(tmp_file)]
+                dbg_gui "setup_port_arrays: errorno is $errorno" 
+
+                if [catch {open $dgrpFVals(tmp_file) r} fp1] { 
+                        puts "cannot open file $dgrpFVals(tmp_file)"
+                        error_dialog "$fp1"; 
+                        exit; 
+                }
+                while {[gets $fp1 line] >=0} {
+        	   dbg_gui "read line $line" 
+                # process the config file line by line
+                # format is 
+                # port_num tty_open_cnt pr_open_cnt tot_wait_cnt mstat iflag oflag cflag bps digiflags
+                   if { [string match {[0-9]*} $line] != 0 } {
+                        set scanresult [scan $line "%d %d %d %d 0x%x 0x%x 0x%x 0x%x %d 0x%x" f1 f2 f3 f4 f5 f6 f7 f8 f9 f10]
+                        if { $scanresult != 10 } {
+                             puts "invalid line read ($scanresult): $line"
+                             continue;
+                        }
+        		dbg_gui "portnumber is $f1" 
+			# only show ports that are configured
+			if { $f1 > $max_ports } { break; }
+                        lappend port_list 	$f1
+                        set port(tty_open_cnt,$f1) $f2
+                        set port(pr_open_cnt,$f1) $f3
+                        set port(tot_wait_cnt,$f1) $f4
+                        set port(mstat,$f1)	$f5
+                        set port(iflag,$f1)	$f6
+                        set port(oflag,$f1)	$f7
+                        set port(cflag,$f1)	$f8
+                        set port(bps,$f1)	$f9
+                        set port(digiflags,$f1)	$f10
+
+			# compute the status now
+			if { [expr ($port(tty_open_cnt,$f1) + $port(pr_open_cnt,$f1))] > 0 } {
+                        	set port(status,$f1)	OPEN
+			} elseif { $port(tot_wait_cnt,$f1) > 0 } {
+                        	set port(status,$f1)	WAITING
+			} else {
+                        	set port(status,$f1)	CLOSED
+			}
+                        set port(description,$f1)	NA
+                   }
+                } 
+                close $fp1
+       } else {
+		error_dialog $dgrpMsg(file_dne_error) $filename
+	}
+
+	file delete -force $dgrpFVals(tmp_file)
+
+} 
+
+#----------------------------------------------------------------------
+#
+# Delete the old listbox, and set all the indices to -1
+#
+proc delete_port_listbox { } {
+        global plistbox 
+	global port
+	global port_list
+
+        dbg_gui "end is "
+        dbg_gui [$plistbox index end]
+
+        # delete the current listbox
+        $plistbox delete 0 end
+        foreach num $port_list {
+		set port_index($num) -1
+	}
+}
+
+#----------------------------------------------------------------------
+#
+# Fill the port listbox with the value in the node_field arrays
+# Set the port(index,) array to hold the listbox index for each id
+#
+proc fill_port_listbox { ID } {
+	global plistbox
+	global port
+	global port_list
+
+	#
+	# insert each port into the list in numeric order
+	#
+
+	if { ![info exists port(status,0) ] }  {
+		return; }
+
+        foreach nn $port_list {
+                set port(index,$nn) [$plistbox index end]
+		$plistbox insert end [format " %#02d  %8s  %6d  %10s" \
+			$nn $port(status,$nn) $port(bps,$nn) \
+			$port(description,$nn)]
+        }
+}
+
+#----------------------------------------------------------------------
+#
+proc view_configured_ports { } {
+	global ps_list
+	global plistbox
+	global dgrpVals
+	global dgrpFVals
+	global dgrpMsg
+	global port
+        global port_list 
+
+	set linenumber [$ps_list curselection];
+	if { $linenumber == "" } { error_dialog $dgrpMsg(no_ps_selected); return }
+	set ID [lindex [$ps_list get $linenumber] 0];
+
+	set w [toplevel .port_config]
+	set dgrpVals(current_node_id) $ID
+	
+
+	# Let's make this window the focus
+	set oldFocus [focus]
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+
+	wm title $w $dgrpMsg(port_title)
+
+	#
+	# add a menubar
+	#
+	create_view_configured_ports_menubar $w
+
+	#
+	# Create the top frame
+	#
+	frame $w.top
+	label $w.top.toptext -text [format $dgrpMsg(port_toptext) $ID]
+	pack $w.top.toptext -side left
+
+        #
+        # Add the refresh button to update the display
+        #
+        button $w.top.bRefresh -text Refresh
+        pack $w.top.bRefresh -padx 5 -pady 5 -side right
+
+	# Create the middle frame
+	frame $w.mid -borderwidth 10
+	# add the list box
+	set plistbox [Scrolled_Listbox $w.mid.port_listbox -width 80 -height 10]
+
+	# bind the default action on double clicking a line
+	bind $plistbox <Return> create_status_toplevel
+	bind $plistbox <Double-1> create_status_toplevel
+
+	setup_port_arrays $ID
+	fill_port_listbox $ID
+
+        $plistbox selection clear 0 end
+        $plistbox selection set 0
+
+	$w.top.bRefresh configure -command refresh_port_listbox
+        bind $w.top.bRefresh <Return> { refresh_port_listbox }
+
+	#
+	# add the headings for the listbox
+	#
+	frame $w.mid.toptext
+	label $w.mid.toptext.headings -text $dgrpMsg(port_headings) \
+		-font {system 12}
+
+	pack $w.mid.toptext.headings -side left
+	pack $w.mid.toptext $w.mid.port_listbox -side top -fill x  -expand true
+
+	#
+	# Create the bottom frame and buttons
+	#
+	frame $w.bottom -borderwidth 10
+
+	button $w.bottom.bDismiss -text Dismiss \
+		-command { destroy_window .port_config }
+	bind $w.bottom.bDismiss <Return> "destroy_window .port_config" 
+	button $w.bottom.bStatus -text "Modem Status" \
+		-command create_status_toplevel
+	bind $w.bottom.bStatus <Return> create_status_toplevel
+		
+	label $w.bottom.ldigi_gif -image $dgrpFVals(logo)
+	pack $w.bottom.ldigi_gif -side left
+	pack $w.bottom.bDismiss $w.bottom.bStatus -side left -padx 5 -expand 1
+
+	pack $w.top -side top -fill x
+	pack $w.mid
+	pack $w.bottom -side bottom -fill x
+
+	focus $w.bottom.bDismiss
+
+}
+
+
+#================================================================================
+#
+# FILE:  dgrp_scriptlog.tcl
+#
+# This is the package to provide logging of commands
+# based on examples in "Practical Programming in Tcl/Tk"
+# Chapter 19.
+#
+# Procedures included in this package:
+#  Run {command}  	-- This is what is called from the outside
+#  Runit { } 		-- This is what is called from the inside
+#  Exec_Log { f args } 
+#  Stop {} 
+#  Log {} 
+#
+#================================================================================
+
+#--------------------------------------------------------------------------------
+#
+proc Exec_Log { f args } {
+# run a program with exec and log the output
+	global run_command log input but frame
+	global dgrpMsg
+
+	set run_command [join $args]
+
+	# Create the top frame for buttons and entry
+	set oldFocus [focus]
+	catch {set w [toplevel $f]} result 
+
+	if { $result == $f } {
+
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+	set frame $f; 
+
+	wm title $w $dgrpMsg(logger_title)
+
+	frame $w.top -borderwidth 10
+
+	# Create the command buttons.
+
+	button $w.top.exit -text Exit -command {
+		destroy_window $frame; \
+		refresh_node_listbox; \
+		return 0 \
+	   }
+	set but [button $w.top.run -text "Run it" -command Runit]
+
+	# Create a labeled entry for the command
+
+	label $w.top.l -text Command: -padx 0
+	entry $w.top.cmd -relief sunken \
+		-textvariable run_command
+	pack $w.top.l -side left
+	pack $w.top.cmd -side left -fill x -expand true
+	pack $w.top.run $w.top.exit -side left 
+
+	# Set up key binding equivalents to the buttons
+	
+	bind $w.top.exit <Return> { destroy_window $frame; \
+		refresh_node_listbox; return 0 }
+	bind $but <Return> Runit
+
+	bind $w.top.cmd <Return> Runit
+	bind $w.top.cmd <Control-c> Stop
+	focus $but
+
+	# Create a text widget to log the output
+
+	frame $w.mid -borderwidth 10
+	set log [Scrolled_Listbox $w.mid.log -width 80 -height 15]
+	pack $w.mid.log -side left -fill x -expand true
+	
+
+	pack $w.top -side top -fill x
+	pack $w.mid -side bottom -fill both -expand true
+
+	} else { dbg_gui "OK $result" }
+
+}
+
+proc Run { given_command } {
+
+	dbg_gui "in Run, the command is $given_command"
+	set w [Exec_Log .frame $given_command]
+}
+
+proc Runit { } {
+	global run_command input log but
+
+	dbg_gui "in Runit, the run_command is $run_command"
+	if [catch {open "|$run_command |& cat" } input] {
+		$log insert end "> $input"
+	} else {
+		fileevent $input readable Log
+		$log insert end "% $run_command"
+		$but config -text Stop -command "Stop"
+		bind $but <Return> Stop
+	}
+}
+
+	
+proc Stop {} {
+	global input but frame
+
+	dbg_gui "Call to Stop in scriptlog"
+	catch {close $input}
+	$but config -text "Run it" -command Runit
+	bind $but <Return> Runit
+}
+
+proc Log {} {
+	global input log
+	if [eof $input] {
+		Stop
+	} else {
+		flush stdout
+		gets $input line
+		$log insert end $line
+		$log see end
+	}
+}
+
+#================================================================================
+#
+# FILE:  dgrp_main.tcl
+#
+# This file contains all the initialization code and the function "main".  
+# Here is a list of all the procedures contained in this file:
+#
+#  sanity_check {} 
+#  get_driver_ver { } 
+#  main { } 
+#
+#================================================================================
+
+#--------------------------------------------------------------------------------
+# 
+# sanity_check
+#
+# Description:
+#
+#	determines whether the necessary files are available to run the gui
+# 	without crashing
+
+proc sanity_check {} {
+	global dgrpFVals
+	global dgrpMsg
+
+	if { ![file exists $dgrpFVals(dgrp_root)] ||
+	     ![file isdirectory $dgrpFVals(dgrp_root)] } {
+		puts [format $dgrpMsg(dir_dne_error) $dgrpFVals(dgrp_root)]
+		exit 0
+	}
+	
+	if { ![file executable $dgrpFVals(dgrp_root)] } {
+		puts [format $dgrpMsg(cannot_cd_error) $dgrpFVals(dgrp_root)]
+		exit 0
+	}
+
+	if { ![file exists $dgrpFVals(dgrp_cfg_node)] } {
+		puts [format $dgrpMsg(file_dne_error) $dgrpFVals(dgrp_cfg_node)]
+		exit 0
+	}
+
+	exec echo > $dgrpFVals(tmp_file)
+
+	if { ![file exists $dgrpFVals(tmp_file)] } {
+		puts [format $dgrpMsg(file_cannot_create_error) $dgrpFVals(tmp_file)]
+		exit 0
+	}
+
+	
+	if { ![file executable $dgrpFVals(dgrp_cfg_node)] } {
+		puts [format $dgrpMsg(no_execute_perm_error) $dgrpFVals(dgrp_cfg_node)]
+		exit 0
+	}
+	
+}
+
+#--------------------------------------------------------------------------------
+# 
+# get_driver_ver
+#
+# Description:
+#
+# 	read the /proc/dgrp/info file for the current driver version 
+# 	and store the value in dgrpMsg(driver_ver)
+#
+# Returns:
+#	 0 on successful completion
+#	-1 file does not exist
+#	-2 failed open
+#	-3 version line not found
+
+proc get_driver_ver { } {
+	global dgrpFVals
+	global dgrpMsg
+
+	set found 0
+	if [file exists $dgrpFVals(proc_info)] {
+		if [catch {open $dgrpFVals(proc_info) r} fp1] { 
+                        puts $dgrpMsg(file_cannot_open_error) $dgrpFVals(proc_info)
+                        error_dialog "$fp1";
+			set dgrpMsg(driver_ver) $dgrpMsg(driver_ver_error)
+                        return -2;
+                }
+		while {[gets $fp1 line] >=0} {
+                	# process the file line by line
+                   	if { [string match {version*} $line] != 0 } {
+                        	scan $line "%s %s" f1 f2
+				dbg_gui "field1 = '$f1', field2 = '$dgrpMsg(driver_ver)'"
+				set dgrpMsg(driver_ver) [format $dgrpMsg(driver_ver_ok) $f2]
+				set found 1
+                   	}
+                }
+                close $fp1
+	} else {
+		set dgrpMsg(driver_ver) $dgrpMsg(driver_ver_dne) 
+		return -1
+	}
+
+	if { $found == 0 } { 
+		set dgrpMsg(driver_ver) $dgrpMsg(driver_ver_error) 
+		return -3
+	} else { return 0 }
+
+}
+
+#--------------------------------------------------------------------------------
+# 
+# main
+#
+
+proc main { } {
+	global dgrpFVals
+
+	# check for files and execute permissions
+	sanity_check
+
+	# change directory to the config directory
+	if [catch {cd $dgrpFVals(dgrp_root)} err] {
+		puts stderr $err
+		exit 0
+	}
+
+	lappend auto_path $dgrpFVals(dgrp_root)/
+
+	# kill any previous definitions of "."
+	wm withdraw .
+	set w [ create_display_all_portservers .dgrp_manager ]
+	catch {tkwait visibility $w}
+	catch {grab set $w}
+	focus $w.bottom.bConfigure
+
+	#
+	# 
+	# Works better than binding <Destroy>
+	#
+	wm protocol $w WM_DELETE_WINDOW { exit 0 }
+
+}
+
+lappend auto_path .
+main 
+

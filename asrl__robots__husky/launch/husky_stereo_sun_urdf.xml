@@ -1,0 +1,124 @@
+<robot name="vehicle">
+
+  <!-- ======= Body ======= -->
+  <link name="vehicle_base_link" />
+  <link name="body_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0"/>
+      <geometry>
+        <box size="0.98 0.42 0.24" />
+      </geometry>
+      <material name="clearpath yellow">
+	      <color rgba="1.0 0.75 0.15 1.0"/>
+      </material>
+    </visual> 
+  </link>
+
+  <joint name="base_body" type="fixed">
+    <parent link="vehicle_base_link"/>
+    <child link="body_link"/>
+    <origin xyz="0.0 0.0 0.175" rpy="0.0 0.0 0.0" />
+    <axis xyz="1.0 0.0 0.0" />
+  </joint>
+
+  <!-- ======= Mast ======= -->
+  <link name="stereo_mast_link">
+    <visual>
+      <geometry>
+	      <cylinder radius="0.03" length=".50" />
+      </geometry>
+      <material name="carbon">
+	      <color rgba="0.15 0.15 0.15 1.0" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="body_mast" type="fixed">
+    <parent link="body_link"/>
+    <child link="stereo_mast_link"/>
+    <origin xyz="0.35 -0.2 0.395" rpy="0.0 0.0 0.0" />
+  </joint>
+
+  <!-- ======= Camera ======= -->
+  <link name="stereo_camera_link">
+    <visual>
+      <geometry>
+        <box size=".28 .04 .04" />
+      </geometry>
+      <material name="bumblebee yellow">
+	      <color rgba=".85 .85 .15 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="mast_camera" type="fixed">
+    <parent link="stereo_mast_link"/>
+    <child link="stereo_camera_link"/>
+    <!-- Stereo camera (+ sun sensor) in the front-right payload bay -->
+    <origin xyz="0.09 0.0 0.20" rpy="2.0071 0.0045 1.5708" /> <!-- The slight pitch value is a result of the payload being slightly misaligned with rover body -JDG-->
+  </joint>
+
+  <!-- ======= Wheels ======= -->
+  <link name="front_left_wheel_link">
+    <visual>
+      <geometry>
+	      <cylinder radius="0.16" length="0.11" />
+      </geometry>
+      <material name="gray">
+	      <color rgba=".2 .2 .2 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="front_right_wheel_link">
+    <visual>
+      <geometry>
+	      <cylinder radius="0.16" length="0.11" />
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <link name="rear_left_wheel_link">
+    <visual>
+      <geometry>
+	      <cylinder radius="0.16" length="0.11" />
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <link name="rear_right_wheel_link">
+    <visual>
+      <geometry>
+	      <cylinder radius="0.16" length="0.11" />
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <joint name="body_front_left_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="front_left_wheel_link"/>
+    <origin xyz="0.25 0.22 -0.175" rpy="-1.57 0 0" />
+  </joint>
+
+  <joint name="body_front_right_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="front_right_wheel_link"/>
+    <origin xyz="0.25 -0.22 -0.175" rpy="1.57 0 0" />
+  </joint>
+
+  <joint name="body_rear_left_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="rear_left_wheel_link"/>
+    <origin xyz="-0.25 0.22 -0.175" rpy="-1.57 0 0" />
+  </joint>
+
+  <joint name="body_rear_right_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="rear_right_wheel_link"/>
+    <origin xyz="-0.25 -0.22 -0.175" rpy="1.57 0 0" />
+  </joint>
+
+</robot>

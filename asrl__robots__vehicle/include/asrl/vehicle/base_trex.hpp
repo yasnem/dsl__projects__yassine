@@ -1,0 +1,521 @@
+/**
+ * \file base.hpp
+ *
+ * \author Braden Stenning
+ *
+ *
+ *
+ *
+ *
+ */
+
+#ifndef ASRL_VEHICLE_BASE
+#define ASRL_VEHICLE_BASE
+
+// Used for absolute value
+#include <math.h>
+
+// ros cpp and exception
+#include <ros/ros.h>
+#include <ros/exception.h>
+
+// Definition of the standard ros messages and types that are used
+#include <geometry_msgs/Twist.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Odometry.h>
+#include <tf/tf.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
+
+// For sending audible messages to sound_play
+#include <sound_play/SoundRequest.h>
+
+// Definition of the asrl messages and services
+#include <asrl__robots__vehicle/VehicleStatus.h>
+#include <asrl__robots__vehicle/ResetOdometry.h>
+
+// Some useful functions for nodes, not necessarily used in the abstract
+// definition, but it is likely used in when actually creating a node object.
+#include <asrl/rosutil/node_utilities.hpp>
+#include <asrl/rosutil/param.hpp>
+
+namespace asrl {
+  namespace vehicle {
+
+    //* CouldNotConnectToRobotException
+    /**
+     * An exception class to throw when the unable to connect to the robot
+     */
+    class CouldNotConnectToRobotException : public ros::Exception
+    {
+    public:
+      CouldNotConnectToRobotException(const std::string& expectedRobotAddress,
+                                      const std::string& additionalInformation)
+        : Exception("Could not connect to robot at " + expectedRobotAddress
+                    + "\nNotes:" + additionalInformation + "\n")
+        {}
+    };
+
+
+    //* CouldNotLoadRobotConfigurationException
+    /**
+     * An exception class to throw when the unable to load the robot
+     * configuration
+     */
+    class CouldNotLoadRobotConfigurationException : public ros::Exception
+    {
+    public:
+      CouldNotLoadRobotConfigurationException(const std::string& expectedRobotConfigurationFile,
+                                              const std::string& additionalInformation)
+        : Exception("Could not configure robot from " + expectedRobotConfigurationFile
+                    + "\nNotes: " + additionalInformation + "\n")
+        {}
+    };
+
+
+    //* Base
+    /**
+     * A base class that can be used to aid in developing robot nodes that use the
+     * AsrlVehicle interface. To use, inherit from this class and implement the
+     * following methods: (1) fillOdometryMessage(), (2) getBatteryLevelPercent(),
+     * (3) getIsEStopPressed(), (4) getAreBrakesOn(), (5)
+     * getIsRobotInErrorState(), (6) setVehicleVelocity(),
+     * and (7) setOdometryFromPoseWithCovariance()
+     *
+     * The inputs are: (1) Twist commands, and (2) the ResetOdometry service
+     *
+     * The outputs are: (1) Odometry messages, (2) Odometry transformations to the
+     * tf server, and (3) VehicleStatus messages
+     */
+    class Base
+    {
+    public:
+      /*!
+       * \brief The base constructor does standard asrl_vehicle initialization.
+       *
+       * The constructor sets the standard settings from the parameter server and
+       * initializes the standard asrl vehicle inputs and outputs. The asrl
+       * vehicle inputs are twist commands and reset odometry commands. The
+       * outputs are vehicle odometry and tf messages and vehicle status messages.
+       */
+      Base(ros::NodeHandle nh);
+
+      /*!
+       * \brief Virtual destructor is necessary for a super class
+       *
+       */      
+      virtual ~Base();
+
+      /*!
+       * \brief Start the timers and message handlers for the vehicle implementation.
+       *
+       * The event timers that trigger odometry and vehicle status messages are
+       * set up here and ros::spin() is called. Calling ros::spin() allows
+       * callbacks to be called and let the node do its thing. This method can be
+       * re-implemented in the derived class if a specific vehicle requires it.
+       */
+      virtual void spin();
+
+    protected :
+      /*!
+       * \brief Handles incoming twist commands in order to set the body rates.
+       *
+       * Set the desired body rates based on the received twist commands. The
+       * standard implementation only accepts linear velocity commands (in
+       * x-direction) and single-axis angular velocity commands (z-direction,
+       * nominally yaw). This method can be re-implemented in the derived class.
+       */
+      virtual void twistCommandCallback(const geometry_msgs::TwistConstPtr &);
+
+      /*!
+       * \brief Handles requests for the resetOdometry service.
+       *
+       * This service will reset the current odometry pose with the pose defined
+       * in the request message. This method can be re-implemented in the derived
+       * class.
+       */
+      virtual bool resetOdometry(asrl__robots__vehicle::ResetOdometry::Request& req,
+                                 asrl__robots__vehicle::ResetOdometry::Response& resp);
+
+      /*!
+       * \brief Publish the odometry message and the send the same transformation to the tf server.
+       *
+       * This is triggered by receiving a timer event that is created in the
+       * AsrlVehicleBase::spin() method. Additionally, this method also performs a
+       * check that a twist command has been recieved (within the timeout period
+       * specified). If no command has been received, the robot is stopped. This
+       * method can be re-implemented in the derived class.
+       */
+      virtual void publishOdometry(const ros::TimerEvent& event);
+
+      /*!
+       * \brief Publish the vehicle status message.
+       *
+       * This is triggered by receiving a timer event that is created in the
+       * AsrlVehicleBase::spin() method. This method can be re-implemented in the
+       * derived class.
+       */
+      virtual void publishVehicleStatus(const ros::TimerEvent& event);
+
+      /*!
+       * \brief Initialize the odometry, vehicle status, and tf messages
+       *
+       * Certain parts of the messages will remain the same at all times. This
+       * method sets the parts of the messages that are static for the odometry,
+       * vehicle status and tf messages. This method can be re-implemented in the
+       * derived class.
+       */
+      virtual void initializeMessages(void);
+
+      /*!
+       * \brief A useful method for stopping the robot
+       *
+       * Stop the robot. This only sends linear (x-direction) and angular velocity
+       * (yaw, specified as the z-direction) and it must be re-implemented in
+       * derived classes that have higher controlled degrees of freedom.
+       */
+      virtual void stopRobotNow(void);
+
+      /*!
+       * \brief Make sure the speed limit is enforced
+       *
+       * Return a legal speed based on the request (command) and the speed limit
+       */
+      virtual float getLegalSpeed(float command, float limit);
+
+      /*!
+       * \brief Send a text to speech message string
+       */
+      virtual void sendTextToSpeech(std::string& text);
+
+      // --------------------------------------------------------------------------
+      // The following virtual methods must be implemented to use the base class
+      // --------------------------------------------------------------------------
+      /*!
+       * \brief Retrieve vehicle odometry (must be specified in derived class)
+       *
+       * Retrieve vehicle odometry pose by filling out the message. This method
+       * must be specified in the derived class
+       */
+      virtual bool fillOdometryMessage(void) = 0;
+
+      /*!
+       * \brief Get the battery level in percent (must be specified in derived class)
+       */
+      virtual float getBatteryLevelPercent(void) = 0;
+
+      /*!
+       * \brief Get the emergency-stop status (must be specified in derived class)
+       */
+      virtual bool getIsEStopPressed(void) = 0;
+
+      /*!
+       * \brief Get the brakes status (must be specified in derived class)
+       */
+      virtual bool getAreBrakesOn(void) = 0;
+
+      /*!
+       * \brief Get the error state of the robot (must be specified in derived class)
+       */
+      virtual bool  getIsRobotInErrorState(void) = 0;
+
+      /*!
+       * \brief Set the velocity in m/s and rad/s (must be specified in derived class)
+       *
+       * Set the vehicle velocity (as doubles because those are what are in
+       * twist messages...).
+       */
+      virtual void setVehicleVelocity(double xMetersPerSecond,
+                                      double yMetersPerSecond,
+                                      double zMetersPerSecond,
+                                      double xRadsPerSecond,
+                                      double yRadsPerSecond,
+                                      double zRadsPerSecond) = 0;
+
+      /*!
+       * \brief Set the current odometry to that specified in poseWithCovariance (must be specified in derived class)
+       */
+      virtual bool setOdometryFromPoseWithCovariance(geometry_msgs::PoseWithCovariance poseWithCovariance) = 0;
+
+      // --------------------------------------------------------------------------
+      ros::NodeHandle nodeHandle_; /**< \brief Use this node handle for custom initialization */
+      ros::Publisher odometryPublisher_; /**< \brief The publisher for the odometry message */
+      ros::Publisher vehicleStatusPublisher_; /**< \brief The publisher for the vehicleStatus message */
+      ros::Publisher textToSpeechPublisher_; /**< \brief A text to speech publisher for audible messages */
+
+      /** \brief The transform broadcaster that sends the latest odometry transformation to the tf server */
+      tf::TransformBroadcaster odometryBroadcaster_;
+
+      ros::Subscriber twistSubscriber_; /**< \brief The subscriber that connects to twist messages */
+      ros::ServiceServer resetOdometryService_; /**< \brief The service that handles the reset odometry requests */
+
+      nav_msgs::Odometry odometryMessage_; /**< \brief The message for odometry updates*/
+      asrl__robots__vehicle::VehicleStatus vehicleStatusMessage_;  /**< \brief The message for vehicleStatus updates*/
+      geometry_msgs::TransformStamped odometryTransformMessage_;  /**< \brief The messages for tf broadcasts*/
+
+      double odometryUpdateIntervalSeconds_; /**< \brief Update interval for the odometry messages*/
+      double vehicleStatusUpdateIntervalSeconds_; /**< \brief Update intervals for the vehicleStatus messages*/
+
+      double linearMaxSpeedMetersPerSecond_; /**< \brief Maximum commandable linear speed (m/s)*/
+      double angularMaxSpeedRadsPerSecond_; /**< \brief Maximum commandable angular speed (rad/s)*/
+      double linearToAngularVelocityRatioMinimum_; /**< \brief A curvature constraint. Zero disables */
+
+      /**
+       * /brief The time that the last twist message was received.
+       *
+       * The last time a twist messages was received. Note, a copy of last twist
+       * message is stored in the vehicleStatus message.
+       */
+      ros::Time lastTwistTime_;
+
+      /**
+       * \brief The command timeout limit.
+       *
+       * The command timeout limit. If no new twist commands are received for the
+       * specified time, in seconds, the vehicle is stopped.
+       */
+      double commandTimeoutSeconds_;
+
+      std::string vehicleName_; /**< \brief The name of the vehicle*/
+      std::string vehicleBaseFrameName_; /**< \brief The name of the vehicle base frame*/
+
+      
+    };
+
+
+    // The Base constructor will retrieve standard settings from the parameter
+    // server and also set up the publishers and subscribers for the node.
+    Base::Base(ros::NodeHandle nh) : nodeHandle_(nh)
+    {
+      // Check the parameter server for optional generic configuration
+      // settings. Add the parameter to the parameter server if the parameter
+      // is not yet listed
+      asrl::rosutil::param(nodeHandle_, "base/command_timeout_seconds", commandTimeoutSeconds_, 0.25);
+      asrl::rosutil::param(nodeHandle_, "base/odometry_update_interval_seconds", odometryUpdateIntervalSeconds_, 0.1 );
+      asrl::rosutil::param(nodeHandle_, "base/status_update_interval_seconds", vehicleStatusUpdateIntervalSeconds_, 1.0 );
+      asrl::rosutil::param(nodeHandle_, "base/linear_max_speed_meters_per_second", linearMaxSpeedMetersPerSecond_, 1.0 );
+      asrl::rosutil::param(nodeHandle_, "base/angular_max_speed_rads_per_second", angularMaxSpeedRadsPerSecond_, 2.0 );
+      asrl::rosutil::param(nodeHandle_, "base/vehicle_name", vehicleName_, std::string("vehicle") );
+      asrl::rosutil::param(nodeHandle_, "base/vehicle_base_frame_name", vehicleBaseFrameName_, std::string("vehicle_base_link") );
+      asrl::rosutil::param(nodeHandle_, "base/linear_to_angular_velocity_ratio_minimum", linearToAngularVelocityRatioMinimum_, 0.0);
+
+      // \todo Check that the parameter settings are valid
+
+
+      // Advertise services for odometry and the asrl vehicle status messages
+      // using the default addresses
+      odometryPublisher_ = nodeHandle_.advertise<nav_msgs::Odometry>("out/odometry",100);
+      vehicleStatusPublisher_ = nodeHandle_.advertise<asrl__robots__vehicle::VehicleStatus>("out/vehicle_status",100);
+
+      // Subscribe to twist commands at the default address. Use remap in the
+      // launch file to change the address
+      twistSubscriber_ = nodeHandle_.subscribe<geometry_msgs::Twist>("in/twist", 1,
+                                                                     &Base::twistCommandCallback, this);
+
+      // Expose the reset odometry service at the default address. Use remap in
+      // the launch file to change this address.
+      resetOdometryService_ = nh.advertiseService("in/reset_odometry",
+                                                  &Base::resetOdometry, this);
+
+      // Set up the text to speech publisher
+      textToSpeechPublisher_ = nodeHandle_.advertise<sound_play::SoundRequest>("/robotsound",100);
+
+      // Initialize the odometry, vehicle status, and tf messages with the parts
+      // of the messages that are static
+      initializeMessages();
+    }
+
+
+    // Initialize the odometry, vehicle status, and tf messages with the parts of
+    // the messages that are static
+    void Base::initializeMessages(void) {
+      odometryMessage_.header.frame_id = vehicleName_ + "_odom";
+      odometryMessage_.child_frame_id = vehicleBaseFrameName_;
+
+      odometryTransformMessage_.header.frame_id = vehicleBaseFrameName_;
+      odometryTransformMessage_.child_frame_id = vehicleName_ + "_odom";
+      odometryTransformMessage_.transform.translation.z = 0.0;
+
+      vehicleStatusMessage_.header.frame_id = vehicleName_;
+      vehicleStatusMessage_.robotStatus = "Initializing";
+
+      return;
+    }
+
+
+    void Base::spin()
+    {
+      // Setup the event timers that will trigger odometry and vehicle status
+      // messages to be sent every interval as defined by
+      // odometryUpdateIntervalSeconds_ and vehicleStatusUpdateIntervalSeconds_
+      // respectively
+      ros::Timer publishOdometryTimer_
+        = nodeHandle_.createTimer(ros::Duration(odometryUpdateIntervalSeconds_),
+                                  &Base::publishOdometry, this, false);
+      ros::Timer publishVehicleStatusTimer_
+        = nodeHandle_.createTimer(ros::Duration(vehicleStatusUpdateIntervalSeconds_),
+                                  &Base::publishVehicleStatus, this, false);
+
+      // Let ros do it's thing. Calling spin will let callbacks get handled and
+      // will allow the node to actually work.
+      ros::spin();
+
+      // Try to stop the robot
+      stopRobotNow();
+
+      return;
+    }
+
+
+    // Stop the robot
+    void Base::stopRobotNow(void)
+    {
+      setVehicleVelocity(0.0,0.0,0.0,0.0,0.0,0.0);
+      return;
+    }
+
+
+    // Get legal speed
+    float Base::getLegalSpeed(float command, float limit)
+    {
+      if (fabs(command) >= limit) {
+        if (command > 0.0) {
+          command = limit;
+        } else {
+          command = -limit;
+        }
+      }
+
+      return command;
+    }
+
+
+    void Base::publishOdometry(const ros::TimerEvent& event)
+    {
+      // Attempt to get an update of the odometry. The fillOdometryMessage()
+      // method will get the latest odometry estimate and fill out the message. It
+      // returns true if everything is successful, false if there is an error.
+      if ( fillOdometryMessage() ) {
+        odometryPublisher_.publish(odometryMessage_);
+
+        // Fill out the transform using the inverse of the odometry message
+        // and send the transformation to the transformation server. The
+        // inverse is used because the tf transforms are in the opposite
+        // sense. This keeps the vehicle_base_link as the root of the tf tree.
+        tf::Quaternion btQuat(odometryMessage_.pose.pose.orientation.x,
+                            odometryMessage_.pose.pose.orientation.y,
+                            odometryMessage_.pose.pose.orientation.z,
+                            odometryMessage_.pose.pose.orientation.w);
+        tf::Transform btTrans(btQuat,
+                            tf::Vector3(odometryMessage_.pose.pose.position.x,
+                                      odometryMessage_.pose.pose.position.y,
+                                      odometryMessage_.pose.pose.position.z) );
+
+        tf::Transform trans(btTrans.inverse());
+        geometry_msgs::Quaternion quat_msg;
+        tf::quaternionTFToMsg(trans.getRotation(), quat_msg);
+
+        odometryTransformMessage_.header.stamp = odometryMessage_.header.stamp;
+        odometryTransformMessage_.transform.translation.x = trans.getOrigin().x();
+        odometryTransformMessage_.transform.translation.y = trans.getOrigin().y();
+        odometryTransformMessage_.transform.translation.z = trans.getOrigin().z();
+        odometryTransformMessage_.transform.rotation = quat_msg;
+	// MODIF FOR TREX	
+	//TODO: add a parameter for publishing tf or not
+        //odometryBroadcaster_.sendTransform(odometryTransformMessage_);
+
+        // If there was an error retrieving the latest odometry, stop the robot and
+        // report the error.
+      } else {
+        stopRobotNow();
+        vehicleStatusMessage_.robotStatus = "Error retrieving odometry. Vehicle commanded to stop.";
+      }
+
+      // Check that velocity commands are still being received. If no new commands
+      // have been received in the timeout interval, tell the robot to stop.
+      // Edit PTF: Stop sending stop commands 5 seconds after the timeout. This
+      //           will allow us to use the Roburoc6 joystick even when our driver
+      //           is connected.
+      ros::Duration timeSinceLastCommand = ros::Time::now() - lastTwistTime_;
+      if ( timeSinceLastCommand.toSec() > commandTimeoutSeconds_  && 
+	   timeSinceLastCommand.toSec() < commandTimeoutSeconds_ + 5.0) {
+        stopRobotNow();
+        vehicleStatusMessage_.robotStatus = "Velocity set to zeros since no commands were received";
+
+      } else {
+	vehicleStatusMessage_.robotStatus = "Twist commands were received";
+      }
+
+      return;
+    }
+
+
+    void Base::publishVehicleStatus(const ros::TimerEvent& event)
+    {
+      vehicleStatusMessage_.header.stamp = ros::Time::now();
+      vehicleStatusMessage_.batteryLevel = getBatteryLevelPercent();
+      vehicleStatusMessage_.isEStopPressed = getIsEStopPressed();
+      vehicleStatusMessage_.areBrakesOn = getAreBrakesOn();
+      vehicleStatusMessage_.isRobotInErrorState = getIsRobotInErrorState();
+      vehicleStatusPublisher_.publish(vehicleStatusMessage_);
+
+      return;
+    }
+
+
+    void Base::twistCommandCallback( const geometry_msgs::TwistConstPtr &msg)
+    {
+      lastTwistTime_ = ros::Time::now();
+      vehicleStatusMessage_.lastCommandTime = lastTwistTime_;
+      vehicleStatusMessage_.lastCommand = *msg;
+
+      double linearX = getLegalSpeed(msg->linear.x, linearMaxSpeedMetersPerSecond_);
+      double linearY = getLegalSpeed(msg->linear.y, linearMaxSpeedMetersPerSecond_);
+      double linearZ = getLegalSpeed(msg->linear.z, linearMaxSpeedMetersPerSecond_);
+      double maxAngularX = angularMaxSpeedRadsPerSecond_;
+      double maxAngularY = angularMaxSpeedRadsPerSecond_;
+      double maxAngularZ = angularMaxSpeedRadsPerSecond_;
+      if(linearToAngularVelocityRatioMinimum_ > 0)
+        {
+          maxAngularX = std::min(maxAngularX,sqrt(pow(linearY,2) + pow(linearZ,2))/linearToAngularVelocityRatioMinimum_);
+          maxAngularY  = std::min(maxAngularY,sqrt(pow(linearX,2) + pow(linearZ,2))/linearToAngularVelocityRatioMinimum_);
+          maxAngularZ = std::min(maxAngularZ,sqrt(pow(linearX,2) + pow(linearY,2))/linearToAngularVelocityRatioMinimum_);            
+        }
+      double angularX = getLegalSpeed(msg->angular.x, maxAngularX);
+      double angularY = getLegalSpeed(msg->angular.y, maxAngularY);
+      double angularZ = getLegalSpeed(msg->angular.z, maxAngularZ);
+
+      setVehicleVelocity(linearX, linearY, linearZ, angularX, angularY, angularZ);
+
+      return;
+    }
+
+
+    bool Base::resetOdometry(asrl__robots__vehicle::ResetOdometry::Request& req,
+                             asrl__robots__vehicle::ResetOdometry::Response& resp)
+    {
+      ROS_INFO("Received request to reset the odometry");
+      return setOdometryFromPoseWithCovariance(req.pose);
+    }
+
+
+    void Base::sendTextToSpeech(std::string& text)
+    {
+      sound_play::SoundRequest soundRequest;
+      soundRequest.sound = -3;
+      soundRequest.command = 1;
+      soundRequest.arg = text;
+      textToSpeechPublisher_.publish(soundRequest);
+      return;
+    }
+
+
+    Base::~Base()
+    {
+
+    }
+
+  } // namespace vehicle
+} // namespace asrl
+
+#endif // ASRL_VEHICLE_BASE

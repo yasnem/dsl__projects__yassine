@@ -1,0 +1,9 @@
+%YAML:1.0
+%CurvatureThresholds: [0.6 0.9 1.3]
+TargetLinearSpeed:  [0.15, 0.2, 0.3]
+HeadingErrorGain:   [0.5,  0.5, 0.5]
+LateralErrorGain:   [0.2, 0.2, 0.2]
+SaturationLimit:    [0.6, 0.6, 0.6]
+LookAheadDistance:  [0.2, 0.3, 0.5]
+AngularLookAhead:	  [0.2, 0.3, 0.5]
+

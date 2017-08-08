@@ -1,0 +1,146 @@
+<robot name="vehicle">
+
+  <!-- ======= Body ======= -->
+  <link name="vehicle_base_link" />
+  <link name="body_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0"/>
+      <geometry>
+        <box size=".56 .28 .29" />
+      </geometry>
+      <material name="red">
+	<color rgba="0.8 0.2 0.2 1.0"/>
+      </material>
+    </visual> 
+  </link>
+
+  <joint name="base_body" type="fixed">
+    <parent link="vehicle_base_link"/>
+    <child link="body_link"/>
+    <!--origin xyz="0.0 0.0 0.22" rpy="0.0 0.0 0.0" /--> 
+    <origin xyz="0.0 0.0 0.175" rpy="0.0 0.0 0.0" />
+    <axis xyz="1.0 0.0 0.0" />
+  </joint>
+
+  <!-- ======= Mast ======= -->
+  <link name="kinect_mast_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.03" length="0.44" />
+      </geometry>
+      <material name="carbon">
+	<color rgba=".15 .15 .15 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="body_mast" type="fixed">
+    <parent link="body_link"/>
+    <child link="kinect_mast_link"/>
+    <!--origin xyz="0.13 0.0 0.34" rpy="0 0 0" /-->
+    <origin xyz="0.185 0.0 0.41" rpy="0 0 0" />
+  </joint>
+
+  <!-- ======= Camera ======= -->
+  <link name="kinect_camera_link">
+    <visual>
+      <geometry>
+        <box size=".28 .04 .04" />
+      </geometry>
+      <material name="xbox 360 kinect">
+	<color rgba=".85 .85 .15 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="mast_camera" type="fixed">
+    <parent link="kinect_mast_link"/>
+    <child link="kinect_camera_link"/>
+    <!--origin xyz="0.03 0.0 0.24" rpy="0 0.7 0" /-->
+    <origin xyz="0.11 0.0 0.09" rpy=" -1.99 0.0 -1.570796" />
+  </joint>
+
+<!-- ====== Camera Hardware ==== 
+  <link name="kinect_camera_link">
+    <visual>
+      <geometry>
+        <box size=".04 .28 .04" />
+      </geometry>
+      <material name="xbox 360 kinect">
+	<color rgba=".85 .85 .15 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="mast_camera" type="fixed">
+    <parent link="camera"/>
+    <child link="kinect_link"/>
+    <origin xyz="0.0 0.0 0" rpy="0 0 0" />
+  </joint>
+-->
+
+  <!-- ======= Wheels ======= -->
+  <link name="front_left_wheel_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.11" length="0.06" />
+      </geometry>
+      <material name="gray">
+	<color rgba=".2 .2 .2 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="front_right_wheel_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.11" length="0.06" />
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <link name="rear_left_wheel_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.11" length="0.06" />
+      </geometry>
+      <material name="gray">
+	<color rgba=".2 .2 .2 1" />
+      </material>
+    </visual>
+  </link>
+
+  <link name="rear_right_wheel_link">
+    <visual>
+      <geometry>
+	<cylinder radius="0.11" length="0.06" />
+      </geometry>
+      <material name="gray"/>
+    </visual>
+  </link>
+
+  <joint name="body_front_left_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="front_left_wheel_link"/>
+    <origin xyz="0.15 0.2 -0.11" rpy="-1.57 0 0" />
+  </joint>
+
+  <joint name="body_front_right_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="front_right_wheel_link"/>
+    <origin xyz="0.15 -0.2 -0.11" rpy="1.57 0 0" />
+  </joint>
+
+  <joint name="body_rear_left_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="rear_left_wheel_link"/>
+    <origin xyz="-0.15 0.2 -0.11" rpy="-1.57 0 0" />
+  </joint>
+
+  <joint name="body_rear_right_wheel" type="fixed">
+    <parent link="body_link"/>
+    <child link="rear_right_wheel_link"/>
+    <origin xyz="-0.15 -0.2 -0.11" rpy="1.57 0 0" />
+  </joint>
+
+</robot>

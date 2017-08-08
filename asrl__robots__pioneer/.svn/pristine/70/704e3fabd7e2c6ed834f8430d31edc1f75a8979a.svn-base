@@ -1,0 +1,22 @@
+<robot name="vehicle">
+  <link name="vehicle_base_link" />
+  <link name="pan_link" />
+  <link name="tilt_link" />
+
+  <joint name="pan" type="continuous">
+    <parent link="vehicle_base_link"/>
+    <child link="pan_link"/>
+    <origin xyz="0.265 0.0 0.44" rpy="0.0 0.0 3.12" />
+    <axis xyz="0.0 0.0 1.0" />
+  </joint>
+
+  <joint name="tilt" type="continuous">
+    <parent link="pan_link"/>
+    <child link="tilt_link"/>
+    <origin xyz="0.0 0.0 0.04" rpy="0 0 0" />
+    <axis xyz="0.0 1.0 0.0" />
+  </joint>
+
+</robot>
+
+

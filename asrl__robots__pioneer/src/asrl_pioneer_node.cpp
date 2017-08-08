@@ -1,0 +1,232 @@
+// The base.hpp header defines the Base class. This class is used as a base
+// class that defines the standard behavior of a node consistent with the
+// asrl_vehicle definition
+#include <asrl/vehicle/base.hpp>
+#include <asrl/vehicle/wheelOdometry2d.hpp>
+
+// Aria is used to communicate with the robot
+#include <Aria.h>
+
+namespace asrl
+{
+  namespace vehicle
+  {
+    //* AsrlAria
+    /**
+     * The AsrlAria class is an implementation of asrl_vehicle derived from the
+     * Base abstract class. It uses Aria to create a ros class for Aria robots.
+     */
+    class AsrlAria : public Base
+    {
+    public:
+      /*!
+       * \brief The AsrlAria constructor does pioneer-specific initialization
+       *
+       * The AsrlAria constructor connects to the robot at the specified
+       * address. The constructor also loads the robot configuration parameters
+       * from the specified file.
+       */
+      AsrlAria(ros::NodeHandle nh);
+
+      /*!
+       * \brief Publish the odometry message and the send the same transformation to the tf server.
+       *
+       * This is triggered by receiving a timer event that is created in the
+       * AsrlVehicleBase::spin() method. Additionally, this method also performs a
+       * check that a twist command has been recieved (within the timeout period
+       * specified). If no command has been received, the robot is stopped. This
+       * method can be re-implemented in the derived class.
+       */
+      //void publishOdometry(const ros::TimerEvent& event);
+
+
+    protected:
+      std::string serialPort_; /**< \brief Serial port address of the robot*/
+      std::string paramFile_; /**< \brief Parameter settings file for the robot*/
+      double batteryVoltageMax_; /**< \brief The battery voltage at full charge*/
+      double batteryVoltageMin_; /**< \brief The battery voltage at empty charge*/
+      ArRobot robot_; /**< \brief Aria interface with the robot*/
+
+    private:
+      /*!
+       * \brief Publish the vehicle status message.
+       *
+       * This is triggered by receiving a timer event that is created in the
+       * Base::spin() method. Reimplemented to not send a transform message.
+       */
+      //void publishVehicleStatus(const ros::TimerEvent& event);
+
+      void initVehicle(void); /*!< \brief Initialize the aria vehicle connection*/
+
+      bool fillOdometryMessage(void); /*!< \brief Implementation of the fillOdometryMessage() virtual function*/
+      float getBatteryLevelPercent(void); /*!< \brief Implementation of the getBatteryLevelPercent() virtual function*/
+      bool getIsEStopPressed(void); /*!< \brief Implementation of the getIsEStopPressed() virtual function*/
+      bool getAreBrakesOn(void); /*!< \brief Implementation of the getAreBrakesOn() virtual function*/
+      bool getIsRobotInErrorState(void); /*!< \brief Implementation of the getIsRobotInErrorState() virtual function*/
+
+      /*!
+       * \brief Implementation of the setLinearVelocity() virtual function
+       */
+      void setVehicleVelocity(double xMetersPerSecond,
+                              double yMetersPerSecond,
+                              double zMetersPerSecond,
+                              double xRadsPerSecond,
+                              double yRadsPerSecond,
+                              double zRadsPerSecond);
+
+      /*!
+       * \brief Implementation of the setOdometryFromPoseWithCovariance() virtual function
+       *
+       * This implementation only sets the 2D pose of the robot. The
+       * covariance is not used. This is because the Aria calculates the
+       * (x,y,yaw) pose of the robot and does not calculate an associated
+       * covariance.
+       */
+      bool setOdometryFromPoseWithCovariance(geometry_msgs::PoseWithCovariance poseWithCovariance);
+
+      WheelOdometry2d wheelOdometry_; /*!< \brief Wheel odometry*/
+      bool wasEstopPressed_; /*!< \brief Flag whether the estop was pressed when it was last checked*/
+    };
+
+
+    AsrlAria::AsrlAria(ros::NodeHandle nh) :
+      Base(nh),
+      wheelOdometry_(nh, vehicleBaseFrameName_, vehicleName_ + std::string("_odom"), odometryUpdateIntervalSeconds_),
+      wasEstopPressed_(false)
+    {
+      // Check the parameter server for pioneer-specific configuration settings
+      asrl::rosutil::param(nodeHandle_, "serial_port", serialPort_, std::string(""));
+      asrl::rosutil::param(nodeHandle_, "serial_port", serialPort_, std::string(""));
+      asrl::rosutil::param(nodeHandle_, "parameter_file", paramFile_, std::string(""));
+      asrl::rosutil::param(nodeHandle_, "battery_voltage_max", batteryVoltageMax_, 13.0);
+      asrl::rosutil::param(nodeHandle_, "battery_voltage_min", batteryVoltageMin_, 11.5);
+
+      // Set up the vehicle
+      initVehicle();
+
+      // Initialize the wheel odometry calculation
+      ros::Duration d(1.0);
+      d.sleep();
+      wheelOdometry_.setInitialTicks(robot_.getLeftEncoder(), robot_.getRightEncoder());
+
+    }
+
+
+    void AsrlAria::initVehicle(void)
+    {
+      // Set up the pioneer
+      Aria::init();
+      ArArgumentBuilder args;
+      args.add("-rp"); // Pass robot's serial port to Aria
+      args.add(serialPort_.c_str());
+
+      // \todo Figure out where these packets are logged
+      // args.add("-rlpr"); // Log received packets
+      // args.add("-rlps"); // Log sent packets
+      // args.add("-rlvr"); // Log received velocities
+
+      ArSimpleConnector robotConnector(&args);
+
+      // Try connecting to the robot.
+      if(!robotConnector.connectRobot(&robot_))
+      {
+        ArLog::log(ArLog::Terse, "Error, could not connect to robot.\n");
+        robotConnector.logOptions();
+        //Aria::exit(1);
+
+        ROS_ERROR("Could not connect to the robot");
+
+        /// \exception asrl::CouldNotConnectToRobotException Throw exception
+        /// when connection to robot fails
+        throw CouldNotConnectToRobotException(serialPort_, "");
+      }
+
+      // Enable the motors, disable sonar
+      robot_.enableMotors();
+      robot_.comInt(ArCommands::SONAR, 0);
+
+      robot_.requestEncoderPackets();
+
+      // Run the ArRobot processing/task cycle thread.
+      robot_.runAsync(true);
+
+      ROS_INFO("Connected to %s : %s", robot_.getRobotType(), robot_.getRobotSubType());
+      ROS_INFO("Loading param file");
+      if (!robot_.loadParamFile(paramFile_.c_str())) {
+        ROS_ERROR("Could not set the robot parameters: %s", paramFile_.c_str());
+
+        /// \exception asrl::CouldNotLoadRobotConfigurationException Throw
+        /// exception when the robot configuration fails.
+        throw CouldNotLoadRobotConfigurationException(paramFile_, "");
+      }
+
+      return;
+    }
+
+    bool AsrlAria::fillOdometryMessage(void)
+    {
+      wheelOdometry_.fillOdometryMessage(odometryMessage_, robot_.getLeftEncoder(), robot_.getRightEncoder());
+      return true;
+    }
+
+
+    float AsrlAria::getBatteryLevelPercent(void)
+    {
+      return 100.0*(  1.0 - (robot_.getRealBatteryVoltage()-batteryVoltageMin_) / (batteryVoltageMax_-batteryVoltageMin_)  );
+    }
+
+
+    bool AsrlAria::getIsEStopPressed(void)
+    {
+      bool isEstopPressed = robot_.getEstop();
+
+      // Check if the robot is recovering from having the e-stop pressed
+      if (!isEstopPressed && wasEstopPressed_) {
+	initVehicle();
+      }
+
+      wasEstopPressed_ = isEstopPressed;
+      return isEstopPressed;
+    }
+
+
+    bool AsrlAria::getAreBrakesOn(void)
+    {
+      // \todo Change this to actually get the brakes, but I can't find
+      //       anything to do it in the Aria api...
+      return false;
+    }
+
+
+    bool AsrlAria::getIsRobotInErrorState(void)
+    {
+      return (robot_.getFaultFlags() != 0);
+    }
+
+    void AsrlAria::setVehicleVelocity(double xMetersPerSecond,
+                                      double yMetersPerSecond,
+                                      double zMetersPerSecond,
+                                      double xRadsPerSecond,
+                                      double yRadsPerSecond,
+                                      double zRadsPerSecond)
+    {
+      robot_.setVel(xMetersPerSecond * 1e3);
+      robot_.setRotVel(zRadsPerSecond * 180.0 / M_PI);
+      return;
+    }
+
+
+    bool AsrlAria::setOdometryFromPoseWithCovariance(geometry_msgs::PoseWithCovariance poseWithCovariance)
+    {
+      wheelOdometry_.resetWheelOdometry(poseWithCovariance);
+      return true;
+    }
+  } // namespace vehicle
+} // namespace asrl
+
+
+// Actually create a pioneer node
+int main( int argc, char** argv )
+{
+  return asrl::rosutil::spinNodeCatchException<asrl::vehicle::AsrlAria>(argc, argv, "AriaVehicle");
+}

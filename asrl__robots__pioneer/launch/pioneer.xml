@@ -1,0 +1,24 @@
+<launch>
+  <!-- Pioneer node -->
+  <node name="vehicle" pkg="asrl__robots__pioneer" type="asrl_pioneer_node">
+    <!-- Base vehicle settings -->
+    <param name="base/linear_max_speed_meters_per_second" type="double" value="0.5" />
+    <param name="base/angular_max_speed_rads_per_second" type="double" value="1.5" />
+    <param name="base/vehicle_name" type="string" value="vehicle" />
+    <param name="base/vehicle_base_frame_name" type="string" value="vehicle_base_link" />
+    
+    <!-- Aria settings -->
+    <param name="serial_port" type="string" value="/dev/tty200" />
+    <param name="parameter_file" type="string" value="$(find asrl__robots__pioneer)/params/pioneer_low_friction_params.p" />
+    <param name="battery_voltage_max" type="double" value="13.0" />
+    <param name="battery_voltage_min" type="double" value="11.5" />
+
+	<!-- Base odometry settings -->
+	<param name="base/odometry_update_interval_seconds" type="double" value="0.1" />
+    <param name="base/odometry_parameters/effective_track_width_meters" type="double" value="0.483" />
+  </node>
+
+  <!-- Robot configuration -->
+  <param name="robot_description" command="cat $(find asrl__robots__pioneer)/launch/pioneer_kinect2_urdf.xml" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+</launch>

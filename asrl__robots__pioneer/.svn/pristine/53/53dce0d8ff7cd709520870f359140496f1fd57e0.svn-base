@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find asrl__robots__gamepad_control)/launch/gamepad_slow_js0.xml" />
+  <include file="$(find asrl__robots__pioneer)/launch/pioneer.xml" />
+</launch>

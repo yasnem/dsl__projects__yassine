@@ -1,0 +1,31 @@
+<package>
+
+  <name>asrl__robots__gamepad_control</name>
+  <version>0.0.0</version>
+  <maintainer email="braden.stenning@robotics.utias.utoronto.ca"></maintainer>
+
+  <description>gamepad_control</description>
+
+  <author>bs</author>
+  <license>BSD</license>
+  <url>http://ros.org/wiki/gamepad_control</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>roscpp</build_depend>
+  <build_depend>joy</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>asrl__common__library</build_depend>
+  <!--<build_depend>rosconsole</build_depend>-->
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>joy</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>asrl__common__library</run_depend>
+  <!--<run_depend>rosconsole</run_depend>-->
+
+</package>
+
+

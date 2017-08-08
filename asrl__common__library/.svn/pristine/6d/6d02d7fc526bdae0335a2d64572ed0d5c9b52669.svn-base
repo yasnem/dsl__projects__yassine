@@ -1,0 +1,655 @@
+\documentclass[11pt,letterpaper,fleqn,oneside]{article}
+
+% Packages
+\usepackage{caption}
+\usepackage{times}
+\usepackage{amssymb,amsfonts,amsmath,amscd}
+\usepackage[usenames]{color}
+\usepackage[pdftex,
+            breaklinks=true,
+            colorlinks=true,
+            citecolor=Gray,
+            linkcolor=Gray,
+            urlcolor=Gray
+           ]{hyperref}
+\usepackage{url}
+\usepackage[pdftex]{graphicx}
+\usepackage{fnpos}
+\usepackage{subfigure}
+\usepackage{verbatim}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{natbib}
+\usepackage{multirow}
+% Set the page geometry
+\usepackage[headheight=1cm,
+            headsep=0.6cm,
+            hmargin={2cm,2cm},
+            vmargin={2cm,2cm},
+            includeheadfoot
+           ]{geometry}
+
+% These two lines protect the underrightarrow so it may be used in figure captions.
+\usepackage{fixltx2e}
+\MakeRobust{\underrightarrow}
+
+
+\definecolor{Gray}{rgb}{0.1,0.1,0.35}
+\newcommand{\ignore}[1]{}
+% Set the caption labeling font
+\renewcommand{\captionlabelfont}{\sf\bfseries}
+
+
+
+\newenvironment{notation}{\vspace{3mm}\\\begin{tabular}[t]{p{.1\textwidth} @{\;\;\;:\;\;\;} p{.85\textwidth}}}{\end{tabular}\vspace{3mm}\\}
+\newcommand{\nitem}[2]{\raggedleft $\displaystyle {#1}$ & #2\\}
+% Include the common figures path.
+\graphicspath{{figs/}}
+
+% Fix some error reporting
+\vfuzz2pt % Don't report over-full v-boxes if over-edge is small
+\hfuzz2pt % Don't report over-full h-boxes if over-edge is small
+
+% - User Input --------------------------------------------------
+%
+% Insert the program, document title, author, etc.
+
+\newcommand{\UTIASprogram}{N/A}
+\newcommand{\UTIAStitle}{A Local Perturbation Approach to Linearizing Equations Involving Transformation Matrices}
+\newcommand{\UTIASdocument}{Doc TR-2011-PTF001}
+\newcommand{\UTIASrevision}{Rev: 1.0}
+\newcommand{\UTIASauthor}{Paul Furgale}
+\newcommand{\UTIASreviewer}{}
+
+% ---------------------------------------------------------------
+
+% PDF setup
+\hypersetup{%
+    pdftitle={\UTIASdocument: \UTIAStitle},
+    pdfauthor={\UTIASauthor},
+    pdfkeywords={},
+    pdfsubject={\UTIASprogram},
+    pdfstartview={},
+    urlcolor=black,
+    linkcolor=black,
+}%
+
+% Define some hyphenation
+\hyphenation{aero-space} \hyphenation{auton-omous}
+
+% Fix the footnotes location
+\makeFNbottom \makeFNbelow
+
+% ---------------------------------------------------------------
+
+\title{\sf\bfseries \UTIAStitle }
+
+\author{
+      \large\normalfont Paul Furgale\\
+      {\normalfont \small \em University of Toronto Institute for Aerospace Studies}\\
+}
+\date{}
+\date{}
+
+
+%%%%%%%%%%%%%%%%%%%%%
+%% Paul's Math Defs
+%% Operators
+\newcommand{\norm}[1]{\left\Vert#1\right\Vert}
+\newcommand{\abs}[1]{\left\vert#1\right\vert}
+\newcommand{\pd}[2]{{\frac{\partial #1}{\partial #2}}}
+
+%% Matrix shortcuts
+\newcommand{\bbm}{\begin{bmatrix}}
+\newcommand{\ebm}{\end{bmatrix}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%% UTIAS Notation
+%%
+
+% Basic bold for letters and symbols
+\DeclareMathAlphabet{\mbf}{OT1}{ptm}{b}{n}
+\newcommand{\mbs}[1]{{\boldsymbol{#1}}}
+
+% helper bold symbols
+\newcommand{\mbsbar}[1]{{\overline{\boldsymbol{#1}}}}
+\newcommand{\mbshat}[1]{{\hat{\boldsymbol{#1}}}}
+\newcommand{\mbsvec}[1]{{\underrightarrow{\boldsymbol{#1}}}}
+\newcommand{\mbsdel}[1]{{\delta {\boldsymbol{#1}}}}
+\newcommand{\mbsdot}[1]{{\dot {\boldsymbol{#1}}}}
+\newcommand{\mbsddot}[1]{{\ddot {\boldsymbol{#1}}}}
+\newcommand{\mbfbar}[1]{{\overline{\mbf{#1}}}}
+\newcommand{\mbfhat}[1]{{\hat{\mbf{#1}}}}
+\newcommand{\mbfvec}[1]{{\underrightarrow{\mbf{#1}}}}
+\newcommand{\mbfdel}[1]{{\delta{\mbf{#1}}}}
+\newcommand{\mbfdot}[1]{{\dot{\mbf{#1}}}}
+\newcommand{\mbfddot}[1]{{\ddot{\mbf{#1}}}}
+
+% A coordinate frame definintion
+\newcommand{\cframe}[1]{{\smash{\underrightarrow{\mathcal{F}}_{#1}}}}
+
+%new notation for homogeneous coordinates:
+\DeclareMathAlphabet{\mathbfit}{OML}{cmm}{b}{it}
+\newcommand{\homo}[1]{{\mathbfit{#1}}}
+\newcommand{\mbfhbar}[1]{{\overline{\homo{#1}}}}
+\newcommand{\mbfhhat}[1]{{\hat{\homo{#1}}}}
+\newcommand{\mbfhdel}[1]{{\delta{\homo{#1}}}}
+\newcommand{\mbfhdot}[1]{{\dot{\homo{#1}}}}
+\newcommand{\mbfhddot}[1]{{\ddot{\homo{#1}}}}
+\newcommand{\mbfh}[1]{{\homo{#1}}}
+
+% Vectors
+\newcommand{\uvec}[1]{{\underrightarrow{#1}}}
+
+% Operators
+\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+
+
+
+%% End Paul's Math Defs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+% Define the basic page style
+\fancypagestyle{plain}{%
+    \fancyhf{}%
+    \fancyfoot[C]{}%
+    \fancyhead[R]{\begin{tabular}[b]{r}\small\sf \UTIASdocument\\
+        \small\sf\today \end{tabular}
+    }%
+    \fancyhead[L]{\includegraphics[height=1cm]{utias.pdf}
+      \renewcommand{\headrulewidth}{0pt}
+      \renewcommand{\footrulewidth}{0pt}
+    }%
+}
+
+% Set the page style for the document
+\pagestyle{fancy}
+
+
+% ---------------------------------------------------------------
+
+% Set the page headers and footers.
+\lhead{ \includegraphics[height=1cm]%
+        {utias.pdf} \begin{tabular}[b]{l}\small\sc{University of Toronto} \\ \small\sc{Institute for Aerospace Studies} \end{tabular}}
+\rhead{ \begin{tabular}[b]{r}\small\sf \UTIASdocument\\
+        \small\sf\today \end{tabular}}
+\chead{}
+\lfoot{}
+\cfoot{\thepage}
+\rfoot{}
+
+
+% ---------------------------------------------------------------
+
+\maketitle%
+
+%\section{Introduction}
+%It is well known that cameras and IMUs are complementary sensors. The purpose of this collaboration will be to address two problems:
+%\begin{enumerate}
+%	\item How to exploit inertial measurements in a purely relative SLAM formulation
+%	\item How to perform infrastructure-free calibration of a stereo camera and inertial measurement unit
+%\end{enumerate}
+
+
+\section{Introduction}
+This document outlines a linearization strategy for equations involving transformation matrices using local perturbations. The method is very similar to the local perturbation strategy used to linearize equations involving rotation matrices. This document assumes that you are familiar with this strategy. For a primer, please see \citet{Barfoot1000}.
+\subsection{Notation}
+We use the notation of \citet{Hughes8600}. Vectors in three-dimensional space are represented by non-bold lower-case characters with an under arrow ($\uvec{z}$), scalar quantities are represented by non-bold italics ($a$), column matrices are represented by bold-face, lower-case characters ($\mbf b$), and matrices are represented by bold-face upper-case characters ($\mbf C$).  
+
+To deal with coordinates in three-dimensional space, we adopt an explicit notation. 
+The symbol $\mbf p_{a}^{bc}$ represents the coordinates of the vector from the origin of $\cframe{c}$, to the origin $\cframe{b}$ (denoted by the superscript), and expressed in $\cframe{a}$ (denoted by the subscript). The symbol $\mbf C_{ab}$ represents the rotation matrix that takes vectors from $\cframe{b}$ to $\cframe{a}$ so that $\mbf p_{a}^{bc} = \mbf C_{ab} \mbf p_{b}^{bc}$. 
+%\subsection{Rotations}
+\section{Transformation Matrices \label{ss:transformations}}
+The projective space, $\mathbb{P}^3$, is the set of equivalence classes of vectors in $\mathbb{R}^4 - \bbm 0 & 0 & 0 & 0\ebm^T$, under the equivalence relationship $\mbfh v \equiv s \mbfh v$, for a non-zero scalar, $s$, and a column, $\mbfh v =: \bbm v_1 & v_2 & v_3 & v_4\ebm^T$ \citep{Hartley0001}. In projective geometry, $\mbfh v$ is considered the {\em homogeneous representation} of the point $\mbf v = \bbm x & y & z \ebm^T \in \mathbb{R}^3$. Hence, we define a pair of functions for moving between homogeneous (bold italic symbol) and non-homogeneous (bold symbol) coordinates:
+\begin{flalign}
+	 \mbfh v = \mbfh h(\mbf v) := \bbm x \\ y \\ z \\ 1 \ebm, \;\; \mbf v  = \mbf h(\mbfh v ) := \frac{1}{v_4}\bbm v_1 \\ v_2 \\ v_3 \ebm \label{eq:fromHomo}
+\end{flalign}
+Both $\mbf v$ and $\mbfh v$ encode the coordinates of a point with respect to some coordinate frame. When $v_4 = 0$, the conversion back to $\mathbb{R}^3$ is not possible, as the corresponding point in $\mathbb{R}^3$ is infinitely far away from the coordinate frame origin. However, there is no singularity when keeping these points in homogeneous coordinates. The Jacobian matrices for each of these (needed later when linearizing error terms for Gauss-Newton) are
+\begin{flalign*}
+	\pd{\mbfh h(\mbf v)}{\mbf v} = \bbm \mbf 1 \\ \mbf 0^T \ebm,\;\;
+	\pd{\mbf h(\mbfh v)}{\mbfh v} = \frac{1}{v_4}\bbm \mbf 1 & -\mbf h(\mbfh v) \ebm ,
+\end{flalign*}
+where $\mbf 1$ is the identity matrix.
+
+In homogeneous coordinates, rigid transformations may be applied to points using a $4 \times 4$ transformation matrix, $\mbfh T$:
+\begin{flalign}
+	\mbfh T_{10} = 
+		\bbm
+			\mbf C_{10} & \mbs \rho_1^{01} \\
+			\mbf 0^T    &       1
+		\ebm,\;\;\;\;
+	\mbfh p_0^{j0} = \mbfh T_{01} \mbfh p_1^{j1},\;\;\;\;
+	\mbfh T_{10}^{-1} = 
+		\bbm
+			\mbf C_{10}^T & - \mbf C_{10}^T \mbs \rho_1^{01} \\
+			\mbf 0^T    &       1
+		\ebm,\;\;\;\;
+	\mbfh p_1^{j1} = \mbfh T_{01}^{-1} \mbfh p_0^{j0}\label{eq:Tx}
+\end{flalign} 
+For clarity, in the remainder of this subsection we will drop all subscripts and superscripts. To estimate $\mbf C$ and $\mbs \rho$ in using the Gauss-Newton algorithm, it is necessary to linearize the error terms involving $\mbfh T$. 
+To do this, we define a $6 \times 1$ perturbation, 
+\begin{equation}
+	\mbfdel t := 
+		\bbm
+			\mbsdel \rho\\
+			\mbsdel \phi
+		\ebm,
+\end{equation}
+used to apply a multiplicative update, $\mbfhdel T(\mbfdel t)$.
+Given $\mbfbar C$ and $\mbsbar \rho$, the rotational and translational components of our current estimate of the transformation $\mbfhbar T$,
+\begin{equation}
+	\mbfhbar T := 
+		\bbm
+			\mbfbar C & \mbsbar \rho \\
+			\mbf 0^T  &   1 
+		\ebm, 
+\end{equation}
+we define the multiplicative update as
+\begin{equation}
+	\mbfhdel T(\mbfdel t) \mbfhbar T = 
+		\bbm
+			\mbf C(\mbsdel \phi) & \mbsdel \rho\\
+			\mbf 0^T             & 1
+		\ebm
+		\bbm
+			\mbfbar C   & \mbsbar \rho\\
+			\mbf 0^T    &    1
+		\ebm, \label{eq:Tupdate}
+\end{equation}
+where $\mbf C(\mbsdel \phi)$ is a sequence of principal-axis rotations ($\alpha$-$\beta$-$\gamma$) of the form
+\begin{equation}
+	\mbf C(\mbsdel \phi) = \mbf C_{\alpha}(\phi_3)\mbf C_{\beta}(\phi_2)\mbf C_{\gamma}(\phi_1)\;,
+\end{equation}
+with $\mbsdel \phi = \bbm \phi_1 & \phi_2 & \phi_3 \ebm^T$.
+Assuming $\mbsdel \phi$ is small, $\mbf C(\mbsdel \phi)$ may be approximated to first order by $\mbf 1 - \mbsdel \phi^\times$,
+where
+\begin{equation}
+	\bbm
+		x\\
+		y\\
+		z
+	\ebm^\times := 
+	\bbm
+		 0   &   -z    &  y \\
+		 z   &    0    & -x \\
+		-y   &    x    &  0
+	\ebm
+\end{equation}
+is the skew-symmetric matrix operator \citep{Barfoot1000}. Substituting this approximation into \eqref{eq:Tupdate}, we get
+\begin{subequations}
+	\begin{flalign}
+		\mbfhdel T(\mbfdel t) \mbfhbar T &\approx 
+			\left(
+				\mbf 1 
+				-
+				\bbm
+					\mbsdel \phi^\times & -\mbsdel \rho\\
+					\mbf 0^T            &     0
+				\ebm
+			\right)
+			\mbfhbar T,\\
+			&= \left( \mbf 1 - \mbfdel t^\boxplus \right) \mbfhbar T \label{eq:dTxT}
+			,
+	\end{flalign}
+\end{subequations}
+where we have defined the operator $(\cdot)^\boxplus$ to be
+\begin{equation*}
+	\mbfdel t^{\boxplus} := 
+		\bbm 
+				\mbsdel \phi^\times & -\mbsdel \rho\\
+				\mbf 0^T            &     0
+		\ebm.
+\end{equation*}
+When dealing with infinitesimal transformation matrices, this operator takes on a role similar to that played by the skew-symmetric operator when dealing with infinitesimal rotation matrices.
+Now we examine how this perturbation affects the transformation of a point, $\mbf p$, represented in homogeneous coordinates by $\mbfh p$,
+\begin{equation}
+	\mbfh p := 
+		\bbm 
+			\mbf u \\ 
+				 s 
+		\ebm,\;\;\;\;
+	\mbfhbar T \mbfh p = 
+		\bbm
+			\,\mbfbar C \mbf u + s \mbsbar \rho\,\\
+			s
+		\ebm,
+\end{equation}
+where $\mbf u$ is a $3\times 1$ column and $s$ is a scalar such that $\mbf p = \mbf h(\mbfh p)$. Applying the perturbation gives us
+\begin{flalign}
+	\left ( 
+		\mbf 1
+		-
+		\mbfdel t^\boxplus
+	\right) 
+	\mbfhbar T 
+	\mbfh p &= \mbfhbar T \mbfh p  - \mbfdel t^\boxplus \mbfhbar T\mbfh p,
+\end{flalign}
+with
+\begin{subequations}
+	\begin{flalign}
+		- \mbfdel t^\boxplus \mbfhbar T \mbfh p &= 
+			\bbm
+				s\mbsdel \rho - \mbsdel \phi^\times(\mbfbar C \mbf u +  s \mbsbar \rho)\\
+				0
+			\ebm\\
+			&= 
+			\bbm
+				s\mbsdel \rho + (\mbfbar C \mbf u + s\mbsbar \rho)^\times \mbsdel \phi \\
+				0
+			\ebm\\
+				&=
+			\underbrace {
+				\bbm
+					s\mbf 1  & (\mbfbar C \mbf u + s\mbsbar \rho)^\times\\
+					\mbf 0^T & \mbf 0^T
+				\ebm
+			}_{=:  (\mbfhbar T \mbfh p)^\boxminus}
+			\underbrace{
+				\bbm
+					\mbsdel \rho\\
+					\mbsdel \phi
+				\ebm
+			}_{\text{$\mbfdel t$}},\label{eq:proveSwap} 
+	\end{flalign}
+\end{subequations}
+where we have used the identity $\mbf x^\times \mbf y = - \mbf y^\times \mbf x$, and defined the operator $(\cdot)^\boxminus$ to be
+\begin{equation}
+	 \bbm \mbf a\\ b \ebm^\boxminus = 
+		\bbm
+			  b\mbf 1   & \mbf a^\times\\
+			  \mbf 0^T & \mbf 0^T    
+		\ebm.
+\end{equation}
+This demonstrates a useful identity,
+\begin{equation}
+	-\mbfdel t^\boxplus \mbfh v \equiv \mbfh v^\boxminus \mbfdel t\,,
+\end{equation}
+for any homogeneous vector $\mbfh v$.
+Using this identity we may write a first-order approximation of how a perturbation, $\mbfdel t$, produces small changes in the transformed point:
+\begin{equation}
+	\mbfhdel T(\mbfdel t) \mbfhbar T \mbfh p \approx \mbfhbar T \mbfh p +
+			(\mbfhbar T \mbfh p)^\boxminus
+			\mbfdel t, \label{eq:linTx}
+\end{equation}
+Similar results hold for perturbations involving $\mbfh T^{-1}$:
+\begin{subequations}
+	\begin{flalign}
+		(\mbfhdel T(\mbfdel t) \mbfhbar T)^{-1} \mbfh p  & = \mbfhbar T^{-1}\mbfhdel T(\mbfdel t)^{-1}\mbfh p\\
+		&\approx \mbfhbar T^{-1}(\mbf 1 + \mbfdel t^\boxplus)\mbfh p\\
+   		&= \mbfhbar T^{-1}\mbfh p - \mbfhbar T^{-1}\mbfh p^\boxminus\mbfdel t.
+	\end{flalign}
+\end{subequations}
+Finally, we present another useful identity:
+\begin{subequations}
+  \label{}
+  \begin{flalign}
+     \mbfh T \mbfh p^\boxminus &=  
+       \bbm \mbf C  & \mbs \rho \\ 
+            \mbf 0^T& 1 
+       \ebm 
+       \bbm 
+         \mbf u\\
+         s 
+       \ebm^\boxminus\\
+     &=  
+       \bbm \mbf C  & \mbs \rho \\ 
+            \mbf 0^T& 1 
+       \ebm 
+       \bbm 
+         s\mbf 1 & \mbf u^\times\\
+         \mbf 0^T & \mbf 0^T
+       \ebm^\boxminus\\
+    & = 
+      \bbm
+        s \mbf C & \mbf C \mbf u^\times\\
+         \mbf 0^T & \mbf 0^T  
+      \ebm\\
+    & = 
+      \bbm
+        s \mbf C & \left(\mbf C \mbf u\right)^\times \mbf C\\
+         \mbf 0^T & \mbf 0^T  
+      \ebm\\
+    & = 
+      \bbm
+        s \mbf 1 & \left(\mbf C \mbf u \right)^\times + s \mbs \rho^\times\\
+         \mbf 0^T & \mbf 0^T  
+      \ebm
+      \bbm
+        \mbf C & -\mbs \rho^\times \mbf C \\
+        \mbf 0 & \mbf C
+      \ebm\\
+    & = 
+      \bbm
+        s \mbf 1 & \left(\mbf C \mbf u + s \mbs \rho \right)^\times\\
+         \mbf 0^T & \mbf 0^T  
+      \ebm
+      \bbm
+        \mbf C & -\mbs \rho^\times \mbf C \\
+        \mbf 0 & \mbf C
+      \ebm\\
+    & = 
+      \bbm
+        \mbf C \mbf u + s \mbs \rho\\
+         s
+      \ebm^\boxminus
+      \bbm
+        \mbf C & -\mbs \rho^\times \mbf C \\
+        \mbf 0 & \mbf C
+      \ebm\\
+   &= \left( \mbfh T \mbfh p \right)^\boxminus \mbfh T^\boxtimes 
+  \end{flalign}
+\end{subequations}
+
+\section{Transformations and Uncertainty}
+
+We propose to use the above linearization strategy within a batch relative SLAM framework. The relative SLAM can be viewed as a graph of uncertain, relative-frame transformations. An uncertain transformation, $\mbfh T_{ab}$, has a mean transformation, $\mbfhbar T_{ab}$, an associated uncertainty, $\mbfdel t_{ab}\sim\mathcal{N}(\mbf 0, \mbf U_{ab})$. The rest of this section will assume that the transformation matrices are uncorrelated. In general, this will not be true as any two states that view the same landmark are correlated. However, dropping these correlations results in greater uncertainty and so it may be seen as a conservative (underconfident) strategy. Hence, each transformation may be thought of as the composition of a large average transformation $\mbfhbar T_{ab}$ and a small uncertain transformation, $\mbfhdel T$, which may be approximated to first order as
+\begin{subequations}
+	\begin{flalign}	
+		\mbfh T_{ab} &= \mbfhdel T \mbfhbar T_{ab}\;,\\
+		              &\approx \left( \mbf 1 - \mbfdel t_{ab}^\boxplus \right) \mbfhbar T_{ab}\;.
+	\end{flalign}
+\end{subequations}
+This situation is similar to the one described in \citet{Smith8600}, however the three-dimensional transformations and different linearization strategy requires us to explicitly reformulate the math. So, given a graph three coordinate frames, $\cframe 0$, $\cframe 1$, and $\cframe 2$, connected by two uncertain transformations, $\mbfh T_{01}$ and $\mbfh T_{12}$, what is the uncertain transformation between pose $0$ and pose $2$, $\mbfh T_{02}$? To find this uncertainty (to first order), we may compose the two transformations along the path through the graph from pose $0$ to pose $2$:
+\begin{subequations}
+	\begin{flalign}
+		\mbfh T_{02}                                       &= \mbfh T_{01} \mbfh T_{12}\\
+		(\mbf 1 - \mbfdel t_{02}^\boxplus)\mbfhbar T_{02} &\approx (\mbf 1 - \mbfdel t_{01}^\boxplus) \mbfhbar T_{01} (\mbf 1 - \mbfdel t_{12}^\boxplus) \mbfhbar T_{12}Ê\label{eq:T02-first-order}\\
+		                                                    &= \mbfhbar T_{01} \mbfhbar T_{12} - \mbfdel t_{01}^\boxplus  \mbfhbar T_{01} \mbfhbar T_{12} -  \mbfhbar T_{01} \mbfdel t_{12}^\boxplus \mbfhbar T_{12}\label{eq:T02-first-order-expanded}
+	\end{flalign}
+\end{subequations}
+Consistent with the first-order approximation, we have dropped the products of small terms. It is clear from the form of \eqref{eq:T02-first-order-expanded} that we do not yet have the algebraic machinery to simplify this equation. To perform simplifications, we must be able to manipulate equations of the form
+\begin{flalign}
+	\mbfhbar T \mbfdel t^\boxplus\;.
+\end{flalign}
+Expanding gives us:
+\begin{subequations}
+	\begin{flalign}
+		\mbfhbar T \mbfdel t^\boxplus &= 
+			\bbm 
+				\mbfbar C & \mbsbar \rho \\
+				\mbf 0^T    &    1
+			\ebm
+			\bbm
+				\mbsdel \phi^\times & -\mbsdel \rho\\
+				\mbf 0^T            &     0
+			\ebm\\
+			&=
+			\bbm
+				\,\mbfbar C \mbsdel \phi^\times & -\mbfbar C \mbsdel \rho \,\\
+				 \mbf 0^T & 0
+			\ebm\\
+			&=
+			\bbm
+				\,\mbfbar C \mbsdel \phi^\times & -\mbfbar C \mbsdel \rho \,\\
+				 \mbf 0^T & 0
+			\ebm
+			\underbrace{
+				\mbfhbar T^{-1} \mbfhbar T
+			}_{\mbf 1}\\
+			&=
+			\bbm
+				\,\mbfbar C \mbsdel \phi^\times & -\mbfbar C \mbsdel \rho \,\\
+				 \mbf 0^T & 0
+			\ebm
+			\bbm
+				\mbfbar C^T & -\mbfbar C^T \mbsbar \rho \\
+				\mbf 0^T    & 1
+			\ebm
+			\mbfhbar T\\
+			&=
+			\bbm
+				\,\mbfbar C \mbsdel \phi^\times \mbfbar C^T & -\mbfbar C \mbsdel \phi^\times \mbfbar C^T \mbsbar \rho-\mbfbar C \mbsdel \rho \,\\
+				 \mbf 0^T & 0
+			\ebm
+			\mbfhbar T\\
+			&=
+			\bbm
+				(\mbfbar C \mbsdel \phi)^\times & -(\mbfbar C \mbsdel \phi)^\times \mbsbar \rho - \mbfbar C \mbsdel \rho \\
+				 \mbf 0^T & 0
+			\ebm
+			\mbfhbar T\\
+			&=
+			\bbm
+				(\mbfbar C \mbsdel \phi)^\times & \mbsbar \rho^\times  \mbfbar C \mbsdel \phi-\mbfbar C \mbsdel \rho \\
+				 \mbf 0^T & 0
+			\ebm
+			\mbfhbar T\\
+			&= 
+			\Biggl(\,
+			\underbrace {
+				\bbm
+					 \mbfbar C & -\mbsbar \rho^\times \mbfbar C \\
+					 \mbf 0    & \mbfbar C
+				\ebm
+			}_{=: \mbfhbar T^\boxtimes}
+				\bbm
+					\mbsdel \rho\\
+					\mbsdel \phi
+				\ebm
+			\Biggr)^\boxplus
+			\mbfhbar T\\
+			&= 
+			 \left(\mbfhbar T^\boxtimes \mbfdel t \right)^\boxplus \mbfhbar T
+	\end{flalign}
+\end{subequations}
+Here we have used the general identities $\mbf x^\times \mbf y = - \mbf y^\times \mbf x$ and $ (\mbf R \mbf x)^\times = \mbf R \mbf x^\times \mbf R^T$.  Stating this result, we have the identity
+\begin{equation}
+	\mbfhbar T \mbfdel t^\boxplus \equiv \left(\mbfhbar T^\boxtimes \mbfdel t\right)^\boxplus \mbfhbar T \;.\label{eq:F-matrix}
+\end{equation}
+Substituting \eqref{eq:F-matrix} into \eqref{eq:T02-first-order-expanded} allows us to complete the simplification of $\mbfh T_{02}$:
+\begin{subequations}
+	\begin{flalign}
+			(\mbf 1 - \mbfdel t_{02}^\boxplus)\mbfhbar T_{02} &\approx \mbfhbar T_{01} \mbfhbar T_{12} - \mbfdel t_{01}^\boxplus  \mbfhbar T_{01} \mbfhbar T_{12} -  \mbfhbar T_{01} \mbfdel t_{12}^\boxplus \mbfhbar T_{12}\\
+			&= \mbfhbar T_{01} \mbfhbar T_{12} - \mbfdel t_{01}^\boxplus  \mbfhbar T_{01} \mbfhbar T_{12} -  \left(\mbfhbar T_{01}^\boxtimes \mbfdel t_{12}\right)^\boxplus \mbfhbar T_{01} \mbfhbar T_{12}\\
+			&= \left(\mbf 1 - \left(\mbfdel t_{01} + \mbfhbar T_{01}^\boxtimes \mbfdel t_{12}\right)^\boxplus \right) \mbfhbar T_{01} \mbfhbar T_{12}
+	\end{flalign}
+\end{subequations}
+Equating components of the lefthand and righthand sides gives us
+\begin{subequations}
+	\begin{flalign}
+		\mbfbar T_{02} &= \mbfbar T_{01} \mbfbar T_{12}\;,\\
+		\mbfdel t_{02} &= \mbfdel t_{01} + \mbfhbar T_{01}^\boxtimes \mbfdel t_{12} \;.
+	\end{flalign}
+\end{subequations}
+Using the expectation operator, $E(\cdot)$, we see that the mean of $\mbfdel t_{02}$ is
+\begin{equation}
+	E(\mbfdel t_{02}) = E(\mbfdel t_{01} + \mbfhbar T_{01}^\boxtimes \mbfdel t_{12} ) = 0\;,
+\end{equation}
+and its covariance is
+\begin{subequations}
+	\begin{flalign}
+		E(\mbfdel t_{02}\mbfdel t_{02}^T) &= E\left((\mbfdel t_{01} + \mbfhbar T_{01}^\boxtimes \mbfdel t_{12} )(\mbfdel t_{01} + \mbfhbar T_{01}^\boxtimes \mbfdel t_{12} )^T\right)\;,\\
+		&=E(\mbfdel t_{01}\mbfdel t_{01}^T) + \mbfhbar T_{01}^\boxtimes E( \mbfdel t_{12} \mbfdel t_{12}^T ) {\mbfhbar T_{01}^\boxtimes}^T\;,\\
+		&=\mbf U_{01} + \mbfhbar T_{01}^\boxtimes \mbf U_{12} {\mbfhbar T_{01}^\boxtimes}^T\;, \label{eq:compound-covariance}
+	\end{flalign}
+\end{subequations}
+where we have made the conservative assumption that the transformations are uncorrelated so that $E(\mbfdel t_{01} \mbfdel t_{12}^T) = 0$.
+
+Finally we derive the uncertainty of $\mbfh T^{-1}$ given an uncertain transformation $\mbfh T$:
+\begin{subequations}
+	\begin{flalign}
+		\mbfh T^{-1} &\approx \mbfhbar T^{-1}(\mbf 1 + \mbfdel t^\boxplus)\\
+		&= \mbfhbar T^{-1}  + \mbfhbar T^{-1}\mbfdel t^\boxplus\\
+		&= \mbfhbar T^{-1}  + \left({\mbfhbar T^{-1}}^\boxtimes \mbfdel t\right)^\boxplus \mbfhbar T^{-1}\\
+		&= \left(\mbf 1  + \left( {\mbfbar T^{-1}}^{\boxtimes} \mbfdel t\right)^\boxplus \right)\mbfhbar T^{-1}
+	\end{flalign}
+\end{subequations}
+So, given a transformation, $\mbf T_{01}$ and uncertainty $\mbf U_{01}$, the uncertainty of $\mbf T_{10} = \mbf T_{01}^{-1}$, is 
+\begin{equation}
+  \label{eq:transformation-uinverse}
+  \mbf U_{10} = \mbf T_{10}^\boxtimes \mbf U_{01} {\mbf T_{10}^\boxtimes}^T.
+\end{equation}
+\section{Quick Reference}
+\subsection{Converting between homogeneous and Euclidean coordinates}
+\begin{flalign}
+	 \mbfh v = \mbfh h(\mbf v) := \bbm x \\ y \\ z \\ 1 \ebm, \;\; \mbf v  = \mbf h(\mbfh v ) := \frac{1}{v_4}\bbm v_1 \\ v_2 \\ v_3 \ebm 
+\end{flalign}
+\begin{flalign*}
+	\pd{\mbfh h(\mbf v)}{\mbf v} = \bbm \mbf 1 \\ \mbf 0^T \ebm,\;\;
+	\pd{\mbf h(\mbfh v)}{\mbfh v} = \frac{1}{v_4}\bbm \mbf 1 & -\mbf h(\mbfh v) \ebm ,
+\end{flalign*}
+\subsection{Algebra for small transformations}
+\begin{equation}
+	\bbm
+		x\\
+		y\\
+		z
+	\ebm^\times := 
+	\bbm
+		 0   &   -z    &  y \\
+		 z   &    0    & -x \\
+		-y   &    x    &  0
+	\ebm, \;\;\;\;
+        \mbf x^\times \mbf y = -\mbf y^\times \mbf x,\;\;\;\; \mbf C \mbf x^\times \mbf C^T = \left(\mbf C \mbf x \right)^\times, \text{ for } \mbf C^T \mbf C = \mbf 1
+\end{equation}
+\begin{equation}
+	 \bbm \mbf a\\ b \ebm^\boxminus = 
+		\bbm
+			  b\mbf 1   & \mbf a^\times\\
+			  \mbf 0^T & \mbf 0^T    
+		\ebm.
+\end{equation}
+
+\begin{equation*}
+	\mbfdel t^{\boxplus} :=
+        \bbm
+          \mbsdel \rho\\
+          \mbsdel \phi
+        \ebm^\boxplus
+        =
+        \bbm 
+          \mbsdel \phi^\times & -\mbsdel \rho\\
+          \mbf 0^T            &     0
+        \ebm
+\end{equation*}
+
+\begin{equation}
+	-\mbfdel t^\boxplus \mbfh v = \mbfh v^\boxminus \mbfdel t\,,
+\end{equation}
+
+\begin{equation}
+	\mbfhdel T(\mbfdel t) \mbfhbar T \approx \left(\mbf 1 - \mbfdel t^\boxplus \right)\mbfhbar T,\;\;\;\;	\left(\mbfhdel T(\mbfdel t) \mbfhbar T\right)^{-1} \approx \mbfhbar T^{-1} \left(\mbf 1 + \mbfdel t^\boxplus \right)
+\end{equation}
+
+\begin{equation}
+  \mbfh T^\boxtimes = 
+    \bbm
+      \mbf C & - \mbs \rho^\times \mbf C\\
+      \mbf 0 & \mbf C
+    \ebm
+\end{equation}
+
+\begin{equation}
+  \mbfh T \mbfdel t^\boxplus = \left( \mbfh T^\boxtimes \mbfdel t\right)^\boxplus \mbfh T
+\end{equation}
+
+\begin{equation}
+  \mbfh T \mbfh p^\boxminus = \left( \mbfh T \mbfh p\right)^\boxminus \mbfh T^\boxtimes
+\end{equation}
+
+
+\bibliographystyle{apalike}
+\bibliography{refs}
+\end{document} 

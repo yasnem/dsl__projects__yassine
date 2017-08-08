@@ -1,0 +1,6 @@
+2013-10-25    migrated CUSTOM xbox driver from alert.
+      - original content and "newer" versions available at http://pingus.seul.org/~grumbel/xboxdrv/
+      - git clone git://github.com/Grumbel/xboxdrv.git
+      - *** note there is a custom change somewhere in the code that sends a zero command on disconnect
+
+
